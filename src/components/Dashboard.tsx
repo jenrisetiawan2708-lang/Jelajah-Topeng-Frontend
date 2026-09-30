@@ -1,411 +1,889 @@
+import { useState, type ReactNode } from 'react'
 import {
-  ArrowDownToLine,
-  ArrowUpRight,
-  CalendarPlus,
-  CheckCircle2,
-  CircleDollarSign,
-  GraduationCap,
-  TicketCheck,
+  Bell,
+  BookOpen,
+  CalendarDays,
+  ChevronRight,
+  CircleHelp,
+  CreditCard,
+  FileText,
+  Home,
+  LayoutDashboard,
+  Map,
+  Menu,
+  Search,
+  Settings,
+  ShieldCheck,
+  Ticket,
+  TrendingUp,
+  User,
   Users,
+  X,
 } from 'lucide-react'
 
-const statistics = [
-  {
-    title: 'Total Kunjungan',
-    value: '24.580',
-    suffix: 'Orang',
-    change: '+14.2%',
-    icon: Users,
-  },
-  {
-    title: 'Tiket Terverifikasi',
-    value: '1.824',
-    suffix: 'Tiket',
-    change: '+8.5%',
-    icon: TicketCheck,
-  },
-  {
-    title: 'Sesi Maestro Aktif',
-    value: '42',
-    suffix: 'Sesi',
-    change: '5 perlu konfirmasi',
-    icon: GraduationCap,
-  },
-  {
-    title: 'Pendapatan Budaya',
-    value: 'Rp148,6',
-    suffix: 'Juta',
-    change: '+18.4%',
-    icon: CircleDollarSign,
-  },
-]
+export type Page =
+  | 'dashboard'
+  | 'exploration'
+  | 'panji'
+  | 'materi'
+  | 'booking'
+  | 'progres'
+  | 'ticketing'
+  | 'payment'
+  | 'notification'
+  | 'faq'
+  | 'users'
+  | 'profile'
 
-const transactions = [
-  {
-    id: '#JT-2841',
-    name: 'Kunjungan Kampung Topeng',
-    type: 'Wisata Budaya',
-    date: '28 Sep 2026',
-    amount: 'Rp450.000',
-    status: 'Terverifikasi',
-  },
-  {
-    id: '#JT-2840',
-    name: 'Workshop Topeng Malangan',
-    type: 'Workshop',
-    date: '28 Sep 2026',
-    amount: 'Rp750.000',
-    status: 'Terverifikasi',
-  },
-  {
-    id: '#JT-2839',
-    name: 'Sesi Maestro Panji',
-    type: 'Masterclass',
-    date: '27 Sep 2026',
-    amount: 'Rp1.200.000',
-    status: 'Menunggu',
-  },
-  {
-    id: '#JT-2838',
-    name: 'Eksplorasi Kampung',
-    type: 'Wisata Budaya',
-    date: '27 Sep 2026',
-    amount: 'Rp325.000',
-    status: 'Terverifikasi',
-  },
-]
+interface DashboardProps {
+  page: Page
+  onNavigate: (page: Page) => void
+}
 
-const masterclass = [
-  {
-    time: '09:00',
-    title: 'Teknik Dasar Topeng Malangan',
-    maestro: 'M. Soleh',
-    participants: '12 Peserta',
-  },
-  {
-    time: '13:30',
-    title: 'Makna Filosofis Panji',
-    maestro: 'Raden Arya',
-    participants: '8 Peserta',
-  },
-  {
-    time: '15:30',
-    title: 'Membuat Topeng Tradisional',
-    maestro: 'Pak Suyanto',
-    participants: '15 Peserta',
-  },
-]
+const pageTitles: Record<Page, string> = {
+  dashboard: 'Dashboard',
+  exploration: 'Eksplorasi Kampung',
+  panji: 'Jejak Sang Panji',
+  materi: 'Materi & Maestro',
+  booking: 'Jadwal & Booking',
+  progres: 'Progres Budaya',
+  ticketing: 'Paket & Ticketing',
+  payment: 'Pembayaran & Transaksi',
+  notification: 'Kelola Notifikasi',
+  faq: 'FAQ & Pusat Bantuan',
+  users: 'Akun Pengguna',
+  profile: 'Profil Admin',
+}
 
-const favoriteCenters = [
-  {
-    name: 'Kampung Topeng Malangan',
-    visits: '8.420',
-    percentage: '86%',
-  },
-  {
-    name: 'Sanggar Asmorobangun',
-    visits: '6.850',
-    percentage: '72%',
-  },
-  {
-    name: 'Sentra Topeng Cirebon',
-    visits: '4.920',
-    percentage: '58%',
-  },
-  {
-    name: 'Desa Wisata Topeng Mas Ubud',
-    visits: '3.780',
-    percentage: '44%',
-  },
-]
+function Dashboard({ page, onNavigate }: DashboardProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
-function Dashboard() {
   return (
-    <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
-      {/* Header */}
-      <section className="mb-7 flex items-start justify-between">
+    <div className="min-h-screen bg-[#f8faf9] text-gray-900">
+
+      {/* ==================================================
+          SIDEBAR
+      ================================================== */}
+      <aside
+        className={`fixed left-0 top-0 z-50 flex h-screen w-[270px] flex-col border-r border-gray-200 bg-white transition-transform duration-200 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* BRAND */}
+        <div className="flex h-[82px] items-center border-b border-gray-200 px-5">
+          <button
+            type="button"
+            onClick={() => onNavigate('dashboard')}
+            className="flex items-center gap-3"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold text-white">
+              JT
+            </div>
+
+            <div className="text-left">
+              <p className="text-sm font-bold text-gray-900">
+                Jelajah Topeng
+              </p>
+
+              <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                Admin Panel Kuratorial
+              </p>
+            </div>
+          </button>
+        </div>
+
+        {/* NAVIGATION */}
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+
+          {/* UTAMA */}
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
+            Utama
+          </p>
+
+          <div className="space-y-1">
+            <SidebarItem
+              active={page === 'dashboard'}
+              icon={<LayoutDashboard size={18} />}
+              label="Dashboard"
+              onClick={() => onNavigate('dashboard')}
+            />
+
+            <SidebarItem
+              active={page === 'exploration'}
+              icon={<Map size={18} />}
+              label="Eksplorasi Kampung"
+              onClick={() => onNavigate('exploration')}
+            />
+
+            <SidebarItem
+              active={page === 'panji'}
+              icon={<BookOpen size={18} />}
+              label="Jejak Sang Panji"
+              onClick={() => onNavigate('panji')}
+            />
+
+            <SidebarItem
+              active={page === 'materi'}
+              icon={<FileText size={18} />}
+              label="Materi & Maestro"
+              onClick={() => onNavigate('materi')}
+            />
+
+            <SidebarItem
+              active={page === 'booking'}
+              icon={<CalendarDays size={18} />}
+              label="Jadwal & Booking"
+              onClick={() => onNavigate('booking')}
+            />
+
+            <SidebarItem
+              active={page === 'progres'}
+              icon={<TrendingUp size={18} />}
+              label="Progres Budaya"
+              onClick={() => onNavigate('progres')}
+            />
+          </div>
+
+          {/* KOMERSIAL */}
+          <p className="mb-2 mt-7 px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
+            Komersial & Operasional
+          </p>
+
+          <div className="space-y-1">
+            <SidebarItem
+              active={page === 'ticketing'}
+              icon={<Ticket size={18} />}
+              label="Paket & Ticketing"
+              onClick={() => onNavigate('ticketing')}
+            />
+
+            <SidebarItem
+              active={page === 'payment'}
+              icon={<CreditCard size={18} />}
+              label="Pembayaran & Transaksi"
+              onClick={() => onNavigate('payment')}
+            />
+
+            <SidebarItem
+              active={page === 'notification'}
+              icon={<Bell size={18} />}
+              label="Kelola Notifikasi"
+              onClick={() => onNavigate('notification')}
+            />
+
+            <SidebarItem
+              active={page === 'faq'}
+              icon={<CircleHelp size={18} />}
+              label="FAQ & Pusat Bantuan"
+              onClick={() => onNavigate('faq')}
+            />
+          </div>
+
+          {/* ADMINISTRASI */}
+          <p className="mb-2 mt-7 px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
+            Administrasi Sistem
+          </p>
+
+          <div className="space-y-1">
+            <SidebarItem
+              active={page === 'users'}
+              icon={<Users size={18} />}
+              label="Akun Pengguna"
+              onClick={() => onNavigate('users')}
+            />
+
+            <SidebarItem
+              active={page === 'profile'}
+              icon={<User size={18} />}
+              label="Profil Admin"
+              onClick={() => onNavigate('profile')}
+            />
+          </div>
+        </div>
+
+        {/* ADMIN PROFILE */}
+        <div className="border-t border-gray-200 p-4">
+          <button
+            type="button"
+            onClick={() => onNavigate('profile')}
+            className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-gray-50"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+              RA
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-gray-800">
+                Raden Arya, S.Sn
+              </p>
+
+              <p className="truncate text-[10px] text-gray-400">
+                Super Admin Panji
+              </p>
+            </div>
+
+            <Settings size={16} className="text-gray-400" />
+          </button>
+        </div>
+      </aside>
+
+      {/* ==================================================
+          MAIN AREA
+      ================================================== */}
+      <div
+        className={`min-h-screen transition-all duration-200 ${
+          sidebarOpen ? 'ml-[270px]' : 'ml-0'
+        }`}
+      >
+
+        {/* ==================================================
+            TOPBAR
+        ================================================== */}
+        <header className="sticky top-0 z-40 flex h-[72px] items-center border-b border-gray-200 bg-white px-6">
+
+          {/* SIDEBAR TOGGLE */}
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="mr-4 flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+            title="Toggle sidebar"
+          >
+            {sidebarOpen ? (
+              <X size={19} />
+            ) : (
+              <Menu size={19} />
+            )}
+          </button>
+
+          {/* BREADCRUMB */}
+          <div className="flex items-center gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => onNavigate('dashboard')}
+              className="text-gray-400 transition hover:text-emerald-600"
+            >
+              Jelajah Topeng
+            </button>
+
+            <ChevronRight
+              size={14}
+              className="text-gray-300"
+            />
+
+            <span className="font-semibold text-gray-700">
+              {pageTitles[page]}
+            </span>
+          </div>
+
+          {/* TOPBAR RIGHT */}
+          <div className="ml-auto flex items-center gap-2">
+
+            {/* SEARCH */}
+            <button
+              type="button"
+              onClick={() =>
+                alert('Fitur pencarian akan dibuat selanjutnya.')
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+              title="Pencarian"
+            >
+              <Search size={18} />
+            </button>
+
+            {/* SYSTEM ONLINE */}
+            <button
+              type="button"
+              onClick={() =>
+                alert('Sistem Jelajah Topeng sedang online.')
+              }
+              className="hidden items-center gap-2 rounded-lg px-3 py-2 text-xs text-gray-500 transition hover:bg-gray-50 md:flex"
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Sistem Online
+            </button>
+
+            {/* NOTIFICATION */}
+            <button
+              type="button"
+              onClick={() => onNavigate('notification')}
+              className="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+              title="Notifikasi"
+            >
+              <Bell size={18} />
+
+              <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-red-500" />
+            </button>
+
+            {/* PROFILE */}
+            <button
+              type="button"
+              onClick={() => onNavigate('profile')}
+              className="ml-1 flex items-center gap-2 rounded-lg p-1.5 transition hover:bg-gray-100"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+                RA
+              </div>
+
+              <div className="hidden text-left lg:block">
+                <p className="text-xs font-semibold text-gray-800">
+                  Raden Arya
+                </p>
+
+                <p className="text-[10px] text-gray-400">
+                  Super Admin
+                </p>
+              </div>
+            </button>
+          </div>
+        </header>
+
+        {/* ==================================================
+            PAGE CONTENT
+        ================================================== */}
+        <main className="p-6 lg:p-8">
+
+          {page === 'dashboard' ? (
+            <DashboardHome onNavigate={onNavigate} />
+          ) : (
+            <PlaceholderPage
+              page={page}
+              onNavigate={onNavigate}
+            />
+          )}
+
+        </main>
+      </div>
+    </div>
+  )
+}
+
+/* ==========================================================
+   SIDEBAR ITEM
+========================================================== */
+
+interface SidebarItemProps {
+  active: boolean
+  icon: ReactNode
+  label: string
+  onClick: () => void
+}
+
+function SidebarItem({
+  active,
+  icon,
+  label,
+  onClick,
+}: SidebarItemProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition ${
+        active
+          ? 'bg-emerald-50 text-emerald-700'
+          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+      }`}
+    >
+      <span
+        className={
+          active
+            ? 'text-emerald-600'
+            : 'text-gray-400 transition group-hover:text-gray-600'
+        }
+      >
+        {icon}
+      </span>
+
+      <span>{label}</span>
+    </button>
+  )
+}
+
+/* ==========================================================
+   DASHBOARD HOME
+========================================================== */
+
+function DashboardHome({
+  onNavigate,
+}: {
+  onNavigate: (page: Page) => void
+}) {
+  return (
+    <div className="mx-auto max-w-[1500px]">
+
+      {/* ==================================================
+          PAGE HEADER
+      ================================================== */}
+      <div className="mb-8 flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
+
         <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-600">
+            Dashboard Kuratorial
+          </p>
+
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             Selamat Datang, Raden Arya! 
           </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
-            Berikut ringkasan aktivitas kuratorial hari ini.
+          <p className="mt-2 text-sm text-gray-500">
+            Pantau aktivitas dan pengelolaan Jelajah Topeng hari ini.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-50"
-          >
-            30 Hari Terakhir
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
 
           <button
             type="button"
-            className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-50"
+            onClick={() =>
+              alert('Fitur unduh laporan akan dibuat selanjutnya.')
+            }
+            className="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
           >
-            <ArrowDownToLine size={16} />
+            <FileText size={16} />
+
             Unduh Laporan PDF
           </button>
 
           <button
             type="button"
-            className="flex h-10 items-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+            onClick={() => onNavigate('booking')}
+            className="flex h-10 items-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
-            <CalendarPlus size={17} />
+            <CalendarDays size={16} />
+
             Buat Reservasi Baru
           </button>
         </div>
-      </section>
+      </div>
 
-      {/* Statistics */}
-      <section className="grid grid-cols-4 gap-4">
-        {statistics.map((item) => {
-          const Icon = item.icon
+      {/* ==================================================
+          PERIOD
+      ================================================== */}
+      <div className="mb-4 flex items-center gap-2 text-xs font-medium text-gray-500">
+        <CalendarDays size={15} />
 
-          return (
-            <div
-              key={item.title}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-            >
-              <div className="flex items-start justify-between">
-                <p className="text-sm font-medium text-gray-500">
-                  {item.title}
-                </p>
+        30 Hari Terakhir
+      </div>
 
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                  <Icon size={18} />
-                </div>
-              </div>
+      {/* ==================================================
+          KPI CARDS
+      ================================================== */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 
-              <div className="mt-5 flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-gray-900">
-                  {item.value}
-                </span>
+        <KpiCard
+          title="Total Kunjungan"
+          value="24.580"
+          change="+14.2%"
+          description="dari periode sebelumnya"
+          icon={<Users size={19} />}
+        />
 
-                <span className="text-xs text-gray-400">
-                  {item.suffix}
-                </span>
-              </div>
+        <KpiCard
+          title="Tiket Terverifikasi"
+          value="1.824"
+          change="+8.5%"
+          description="dari periode sebelumnya"
+          icon={<ShieldCheck size={19} />}
+        />
 
-              <div className="mt-2 flex items-center gap-1 text-xs">
-                {item.change.startsWith('+') ? (
-                  <ArrowUpRight
-                    size={14}
-                    className="text-emerald-600"
-                  />
-                ) : null}
+        <KpiCard
+          title="Sesi Maestro Aktif"
+          value="42"
+          change="5"
+          description="perlu konfirmasi"
+          icon={<BookOpen size={19} />}
+        />
 
-                <span
-                  className={
-                    item.change.startsWith('+')
-                      ? 'font-semibold text-emerald-600'
-                      : 'font-medium text-amber-600'
-                  }
-                >
-                  {item.change}
-                </span>
+        <KpiCard
+          title="Pendapatan Budaya"
+          value="Rp148,6 Juta"
+          change="+18.4%"
+          description="dari periode sebelumnya"
+          icon={<TrendingUp size={19} />}
+        />
+      </div>
 
-                {item.change.startsWith('+') && (
-                  <span className="text-gray-400">
-                    dari periode sebelumnya
-                  </span>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </section>
+      {/* ==================================================
+          CONTENT GRID
+      ================================================== */}
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
 
-      {/* Main Content */}
-      <section className="mt-6 grid grid-cols-[1.55fr_1fr] gap-6">
-        {/* Transactions */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        {/* TRANSACTION */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-6">
+
+          <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="text-base font-bold text-gray-900">
                 Transaksi Reservasi & Workshop Budaya
               </h2>
 
               <p className="mt-1 text-xs text-gray-400">
-                Aktivitas transaksi terbaru
+                Ringkasan aktivitas transaksi dalam 30 hari terakhir
               </p>
             </div>
 
             <button
               type="button"
-              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+              onClick={() => onNavigate('payment')}
+              className="shrink-0 text-xs font-semibold text-emerald-600 hover:text-emerald-700"
             >
               Lihat Semua
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-100 text-[11px] uppercase tracking-wide text-gray-400">
-                  <th className="px-5 py-3 font-semibold">Transaksi</th>
-                  <th className="px-3 py-3 font-semibold">Tanggal</th>
-                  <th className="px-3 py-3 font-semibold">Nominal</th>
-                  <th className="px-3 py-3 font-semibold">Status</th>
-                </tr>
-              </thead>
+          {/* CHART PLACEHOLDER */}
+          <div className="flex h-[280px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50">
 
-              <tbody>
-                {transactions.map((transaction) => (
-                  <tr
-                    key={transaction.id}
-                    className="border-b border-gray-50 last:border-0"
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-500">
-                          <TicketCheck size={17} />
-                        </div>
+            <div className="text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-white text-gray-300 shadow-sm">
+                <TrendingUp size={22} />
+              </div>
 
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            {transaction.name}
-                          </p>
+              <p className="text-sm font-semibold text-gray-500">
+                Grafik Transaksi
+              </p>
 
-                          <p className="mt-0.5 text-[11px] text-gray-400">
-                            {transaction.id} · {transaction.type}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-4 text-xs text-gray-500">
-                      {transaction.date}
-                    </td>
-
-                    <td className="px-3 py-4 text-sm font-semibold text-gray-700">
-                      {transaction.amount}
-                    </td>
-
-                    <td className="px-3 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                          transaction.status === 'Terverifikasi'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-amber-50 text-amber-700'
-                        }`}
-                      >
-                        {transaction.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              <p className="mt-1 text-xs text-gray-400">
+                Visualisasi data transaksi akan ditambahkan
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Masterclass */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          {/* MINI STATS */}
+          <div className="mt-5 grid grid-cols-3 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50">
+
+            <div className="p-4 text-center">
+              <p className="text-lg font-bold text-gray-900">
+                856
+              </p>
+
+              <p className="mt-1 text-[11px] text-gray-400">
+                Reservasi
+              </p>
+            </div>
+
+            <div className="p-4 text-center">
+              <p className="text-lg font-bold text-gray-900">
+                624
+              </p>
+
+              <p className="mt-1 text-[11px] text-gray-400">
+                Workshop
+              </p>
+            </div>
+
+            <div className="p-4 text-center">
+              <p className="text-lg font-bold text-gray-900">
+                344
+              </p>
+
+              <p className="mt-1 text-[11px] text-gray-400">
+                Lainnya
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        {/* MASTERCLASS */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-6">
+
+          <div className="mb-6 flex items-start justify-between">
             <div>
-              <h2 className="font-semibold text-gray-900">
+              <h2 className="text-base font-bold text-gray-900">
                 Masterclass Hari Ini
               </h2>
 
               <p className="mt-1 text-xs text-gray-400">
-                Jadwal sesi maestro
+                Sesi maestro yang berlangsung hari ini
               </p>
             </div>
 
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
-              3 Sesi
-            </span>
+            <button
+              type="button"
+              onClick={() => onNavigate('materi')}
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+            >
+              Semua
+            </button>
           </div>
 
-          <div className="divide-y divide-gray-100">
-            {masterclass.map((item) => (
-              <div
-                key={`${item.time}-${item.title}`}
-                className="flex gap-4 px-5 py-4"
-              >
-                <div className="w-12 pt-0.5">
-                  <p className="text-xs font-bold text-emerald-600">
-                    {item.time}
-                  </p>
-                </div>
+          <div className="space-y-3">
 
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-800">
-                    {item.title}
-                  </p>
+            <MasterclassItem
+              title="Seni Topeng Malangan"
+              time="10.00 – 12.00 WIB"
+              status="Berlangsung"
+              onClick={() => onNavigate('materi')}
+            />
 
-                  <p className="mt-1 text-xs text-gray-400">
-                    Maestro: {item.maestro}
-                  </p>
+            <MasterclassItem
+              title="Workshop Pembuatan Topeng"
+              time="14.00 – 16.00 WIB"
+              status="Terjadwal"
+              onClick={() => onNavigate('materi')}
+            />
 
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    {item.participants}
-                  </p>
-                </div>
+            <MasterclassItem
+              title="Jejak Sang Panji"
+              time="16.30 – 18.00 WIB"
+              status="Terjadwal"
+              onClick={() => onNavigate('panji')}
+            />
 
-                <CheckCircle2
-                  size={17}
-                  className="mt-1 text-emerald-500"
-                />
-              </div>
-            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      {/* Favorite Centers */}
-      <section className="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
+      {/* ==================================================
+          FAVORITE SENTRA
+      ================================================== */}
+      <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
+
+        <div className="mb-6 flex items-start justify-between">
+
           <div>
-            <h2 className="font-semibold text-gray-900">
+            <h2 className="text-base font-bold text-gray-900">
               Statistik Sentra Favorit
             </h2>
 
             <p className="mt-1 text-xs text-gray-400">
-              Sentra dengan resonansi budaya tertinggi
+              Sentra budaya dengan jumlah kunjungan tertinggi
             </p>
           </div>
 
           <button
             type="button"
-            className="text-xs font-semibold text-emerald-600"
+            onClick={() => onNavigate('exploration')}
+            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
           >
-            Lihat Statistik
+            Eksplorasi Semua
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-4 gap-6">
-          {favoriteCenters.map((center) => (
-            <div key={center.name}>
-              <div className="flex items-end justify-between gap-2">
-                <p className="text-xs font-medium text-gray-600">
-                  {center.name}
-                </p>
+        <div className="grid gap-3 md:grid-cols-3">
 
-                <span className="text-xs font-bold text-gray-800">
-                  {center.visits}
-                </span>
-              </div>
+          <FavoriteItem
+            number="01"
+            title="Kampung Topeng Malangan"
+            visitors="8.420 kunjungan"
+            onClick={() => onNavigate('exploration')}
+          />
 
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full bg-emerald-500"
-                  style={{ width: center.percentage }}
-                />
-              </div>
+          <FavoriteItem
+            number="02"
+            title="Sentra Kerajinan Topeng Kayu Bobung"
+            visitors="6.840 kunjungan"
+            onClick={() => onNavigate('exploration')}
+          />
 
-              <p className="mt-1 text-[10px] text-gray-400">
-                kunjungan
-              </p>
-            </div>
-          ))}
+          <FavoriteItem
+            number="03"
+            title="Sanggar Seni Topeng Cirebon"
+            visitors="5.210 kunjungan"
+            onClick={() => onNavigate('exploration')}
+          />
+
         </div>
       </section>
-    </main>
+    </div>
+  )
+}
+
+/* ==========================================================
+   KPI CARD
+========================================================== */
+
+interface KpiCardProps {
+  title: string
+  value: string
+  change: string
+  description: string
+  icon: ReactNode
+}
+
+function KpiCard({
+  title,
+  value,
+  change,
+  description,
+  icon,
+}: KpiCardProps) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5">
+
+      <div className="flex items-start justify-between">
+        <p className="text-xs font-medium text-gray-500">
+          {title}
+        </p>
+
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          {icon}
+        </div>
+      </div>
+
+      <p className="mt-5 text-2xl font-bold tracking-tight text-gray-900">
+        {value}
+      </p>
+
+      <div className="mt-2 flex items-center gap-1.5 text-xs">
+        <span
+          className={
+            change.startsWith('+')
+              ? 'font-semibold text-emerald-600'
+              : 'font-semibold text-amber-600'
+          }
+        >
+          {change}
+        </span>
+
+        <span className="text-gray-400">
+          {description}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/* ==========================================================
+   MASTERCLASS ITEM
+========================================================== */
+
+interface MasterclassItemProps {
+  title: string
+  time: string
+  status: string
+  onClick: () => void
+}
+
+function MasterclassItem({
+  title,
+  time,
+  status,
+  onClick,
+}: MasterclassItemProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex w-full items-center gap-3 rounded-xl border border-gray-100 p-3 text-left transition hover:border-emerald-100 hover:bg-emerald-50/40"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+        <BookOpen size={17} />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-gray-800">
+          {title}
+        </p>
+
+        <p className="mt-1 text-[11px] text-gray-400">
+          {time}
+        </p>
+      </div>
+
+      <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-semibold text-emerald-600">
+        {status}
+      </span>
+
+      <ChevronRight
+        size={15}
+        className="shrink-0 text-gray-300 transition group-hover:text-emerald-500"
+      />
+    </button>
+  )
+}
+
+/* ==========================================================
+   FAVORITE ITEM
+========================================================== */
+
+interface FavoriteItemProps {
+  number: string
+  title: string
+  visitors: string
+  onClick: () => void
+}
+
+function FavoriteItem({
+  number,
+  title,
+  visitors,
+  onClick,
+}: FavoriteItemProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex items-center gap-4 rounded-xl border border-gray-100 p-4 text-left transition hover:border-emerald-200 hover:bg-emerald-50/40"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-xs font-bold text-gray-500 group-hover:bg-emerald-50 group-hover:text-emerald-600">
+        {number}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-gray-800">
+          {title}
+        </p>
+
+        <p className="mt-1 text-xs text-gray-400">
+          {visitors}
+        </p>
+      </div>
+
+      <ChevronRight
+        size={16}
+        className="shrink-0 text-gray-300 group-hover:text-emerald-500"
+      />
+    </button>
+  )
+}
+
+/* ==========================================================
+   PLACEHOLDER PAGE
+========================================================== */
+
+function PlaceholderPage({
+  page,
+  onNavigate,
+}: {
+  page: Page
+  onNavigate: (page: Page) => void
+}) {
+  return (
+    <div className="mx-auto flex min-h-[calc(100vh-130px)] max-w-[900px] items-center justify-center">
+
+      <div className="w-full rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
+
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+          <LayoutDashboard size={25} />
+        </div>
+
+        <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-emerald-600">
+          Jelajah Topeng
+        </p>
+
+        <h1 className="mt-2 text-2xl font-bold text-gray-900">
+          {pageTitles[page]}
+        </h1>
+
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-gray-500">
+          Halaman ini sudah terhubung dengan sistem navigasi
+          Dashboard. Konten lengkap halaman ini akan kita bangun
+          sesuai wireframe berikutnya.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => onNavigate('dashboard')}
+          className="mt-6 inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+        >
+          <Home size={16} />
+
+          Kembali ke Dashboard
+        </button>
+      </div>
+    </div>
   )
 }
 
