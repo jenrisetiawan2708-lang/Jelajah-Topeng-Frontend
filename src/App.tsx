@@ -15,11 +15,13 @@ import {
   LayoutDashboard,
   LockKeyhole,
   LogOut,
+  Pencil,
   Search,
   Settings,
   ShieldCheck,
   Ticket,
   TrendingUp,
+  Trash2,
   User,
   UserCog,
   Users,
@@ -44,6 +46,7 @@ type Page =
   | "profile";
 
 function App() {
+  const [globalQuery, setGlobalQuery] = useState("");
   const [page, setPage] = useState<Page>(() => {
     try {
       return localStorage.getItem(LOCAL_SESSION_KEY) ||
@@ -96,7 +99,7 @@ function App() {
     },
     {
       id: "materi" as Page,
-      label: "Materi & Maestro",
+      label: "Belajar dengan Maestro",
       icon: BookOpen,
     },
     {
@@ -114,7 +117,7 @@ function App() {
   const operationalMenus = [
     {
       id: "ticketing" as Page,
-      label: "Paket & Ticketing",
+      label: "Ticketing Online",
       icon: Ticket,
     },
     {
@@ -137,7 +140,7 @@ function App() {
   const systemMenus = [
     {
       id: "users" as Page,
-      label: "Akun Pengguna",
+      label: "Profil Pengguna",
       icon: Users,
     },
     {
@@ -152,14 +155,14 @@ function App() {
     dashboard: "Dashboard",
     exploration: "Eksplorasi Kampung",
     panji: "Jejak Sang Panji",
-    materi: "Materi & Maestro",
+    materi: "Belajar dengan Maestro",
     booking: "Jadwal & Booking",
     progres: "Progres Budaya",
-    ticketing: "Paket & Ticketing",
+    ticketing: "Ticketing Online",
     payment: "Pembayaran & Transaksi",
     notification: "Kelola Notifikasi",
     faq: "FAQ & Pusat Bantuan",
-    users: "Akun Pengguna",
+    users: "Profil Pengguna",
     profile: "Profil Admin",
   };
 
@@ -332,6 +335,8 @@ function App() {
               <input
                 type="text"
                 placeholder="Cari maestro, reservasi, data..."
+                value={globalQuery}
+                onChange={(event) => setGlobalQuery(event.target.value)}
                 className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
               />
             </div>
@@ -388,95 +393,125 @@ function App() {
           ================================================= */}
 
           <main className="flex-1 p-8">
-            {page === "dashboard" && <Dashboard navigate={navigate} />}
+            {page === "dashboard" && <Dashboard navigate={navigate} query={globalQuery} />}
 
             {page === "exploration" && (
               <GenericPage
-                title="Direktori & Kurasi Sentra Budaya"
-                description="Kelola data sentra budaya, sanggar, lokasi artefak, dan status verifikasi."
+                kind="exploration"
+                title="Eksplorasi Kampung"
+                description="Jelajahi peta interaktif, detail titik lokasi, sejarah kampung, tokoh, tradisi, dan dokumentasi budaya."
                 icon={Compass}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "panji" && (
               <GenericPage
+                kind="panji"
                 title="Jejak Sang Panji"
-                description="Manajemen tahapan clue, rute petualangan budaya, dan distribusi reward."
+                description="Ikuti pemberhentian cerita Panji, kumpulkan clue, buka galeri budaya, lalu raih reward."
                 icon={Landmark}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "materi" && (
               <GenericPage
-                title="Kelola Materi & Profil Maestro"
-                description="Direktori data maestro seni topeng tradisional Nusantara dan modul materi ajar kuratorial."
+                kind="materi"
+                title="Belajar dengan Maestro"
+                description="Temukan profil maestro, materi bertahap, detail video/artikel/PDF, progres modul, dan jadwal sesi."
                 icon={BookOpen}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "booking" && (
               <GenericPage
-                title="Kelola Jadwal & Booking Maestro"
-                description="Pantau kalender reservasi workshop budaya, masterclass, dan kunjungan sentra."
+                kind="booking"
+                title="Kalender Jadwal & Booking"
+                description="Pilih sesi maestro di kalender, kirim formulir konfirmasi, dan lihat riwayat booking."
                 icon={CalendarDays}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "progres" && (
               <GenericPage
-                title="Progresan Pelestarian Budaya"
-                description="Pemantauan capaian target misi, keterlibatan peserta, dan distribusi poin reward."
+                kind="progres"
+                title="Progres Budaya"
+                description="Pantau misi dan modul yang selesai, koleksi lencana, sertifikat, serta riwayat aktivitas."
                 icon={TrendingUp}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "ticketing" && (
               <GenericPage
-                title="Kelola Tiket & Paket Kunjungan"
-                description="Manajemen kuota, harga paket edukasi sanggar, dan status publikasi tiket."
+                kind="ticketing"
+                title="Ticketing Online"
+                description="Pilih paket kunjungan, jumlah peserta, tanggal, isi data pemesan, lalu lanjut checkout."
                 icon={Ticket}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "payment" && (
               <GenericPage
-                title="Kelola Pembayaran & Transaksi"
-                description="Log transaksi masuk, verifikasi pelunasan tiket, dan rekonsiliasi dana maestro."
+                kind="payment"
+                title="Checkout & Pembayaran"
+                description="Tinjau ringkasan checkout, status pembayaran, e-ticket/QR code, dan riwayat pembelian."
                 icon={CreditCard}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "notification" && (
               <GenericPage
-                title="Kelola & Siaran Notifikasi"
-                description="Kirim pengumuman kurasi, pengingat jadwal masterclass, dan pemberitahuan sistem."
+                kind="notification"
+                title="Notifikasi"
+                description="Lihat pengingat jadwal, status booking, pembaruan misi, dan informasi perjalanan budaya."
                 icon={Bell}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "faq" && (
               <GenericPage
-                title="Kelola FAQ & Pusat Bantuan"
-                description="Kelola daftar pertanyaan yang sering diajukan, panduan kurasi, dan bantuan teknis."
+                kind="faq"
+                title="Bantuan / FAQ"
+                description="Temukan panduan akun, eksplorasi, booking maestro, tiket, checkout, dan pembayaran."
                 icon={CircleHelp}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
             {page === "users" && (
               <GenericPage
-                title="Kelola Akun Pengguna & Hak Akses"
-                description="Kelola otorisasi admin, kurator sanggar, maestro, dan staf operasional."
+                kind="users"
+                title="Profil Pengguna"
+                description="Kelola informasi profil pengguna yang dipakai untuk konfirmasi booking dan pembelian tiket."
                 icon={Users}
                 navigate={navigate}
+                query={globalQuery}
+                onQueryChange={setGlobalQuery}
               />
             )}
 
@@ -492,9 +527,26 @@ function App() {
 // DASHBOARD
 // =============================================================
 
-function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
+function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query: string }) {
   const [period, setPeriod] = useState("30 Hari Terakhir");
   const [showPeriods, setShowPeriods] = useState(false);
+  const transactions = [
+    { id: "#TRX-2024-889", name: "SMA Taruna Nusantara", location: "Kampung Topeng Malang", amount: "Rp3.600.000", status: "Terverifikasi" },
+    { id: "#TRX-2024-890", name: "Dr. Helena Meyer", location: "Sanggar Cirebon Slangit", amount: "Rp850.000", status: "Menunggu" },
+    { id: "#TRX-2024-882", name: "Komunitas Tari Sekar", location: "Sentra Topeng Kayu Bobung", amount: "Rp2.450.000", status: "Terverifikasi" },
+    { id: "#TRX-2024-891", name: "Bpk. Bambang Sutrisno", location: "Padepokan Klaten Panji", amount: "Rp600.000", status: "Terverifikasi" },
+  ];
+  const visibleTransactions = transactions.filter((item) =>
+    `${item.id} ${item.name} ${item.location} ${item.amount} ${item.status}`
+      .toLowerCase().includes(query.trim().toLowerCase()),
+  );
+  const masterclasses = [
+    { time: "09:00", title: "Pahat Karakter Wajah Panji", maestro: "Ki Suwito", place: "Kampung Topeng Malang" },
+    { time: "13:00", title: "Sungging Alami Pigmen Getah", maestro: "Mbah Rasimun", place: "Padepokan Klaten Panji" },
+    { time: "15:30", title: "Koreografi Tari Panji", maestro: "Dra. Endang", place: "Sanggar Cirebon" },
+  ].filter((item) =>
+    `${item.title} ${item.maestro} ${item.place}`.toLowerCase().includes(query.trim().toLowerCase()),
+  );
 
   return (
     <div>
@@ -563,6 +615,7 @@ function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
           value="24.580"
           subtitle="+14.2% dari bulan lalu"
           icon={Users}
+          onClick={() => navigate("exploration")}
         />
 
         <StatCard
@@ -570,6 +623,7 @@ function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
           value="1.824"
           subtitle="+8.5% dari bulan lalu"
           icon={Ticket}
+          onClick={() => navigate("ticketing")}
         />
 
         <StatCard
@@ -577,6 +631,7 @@ function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
           value="42"
           subtitle="5 perlu konfirmasi"
           icon={CalendarDays}
+          onClick={() => navigate("booking")}
         />
 
         <StatCard
@@ -584,6 +639,7 @@ function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
           value="Rp148,6 Juta"
           subtitle="+18.4% dari bulan lalu"
           icon={WalletCards}
+          onClick={() => navigate("payment")}
         />
       </div>
 
@@ -611,37 +667,9 @@ function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
           </div>
 
           <div className="divide-y divide-slate-100">
-            <TransactionRow
-              id="#TRX-2024-889"
-              name="SMA Taruna Nusantara"
-              location="Kampung Topeng Malang"
-              amount="Rp3.600.000"
-              status="Terverifikasi"
-            />
-
-            <TransactionRow
-              id="#TRX-2024-890"
-              name="Dr. Helena Meyer"
-              location="Sanggar Cirebon Slangit"
-              amount="Rp850.000"
-              status="Menunggu"
-            />
-
-            <TransactionRow
-              id="#TRX-2024-882"
-              name="Komunitas Tari Sekar"
-              location="Sentra Topeng Kayu Bobung"
-              amount="Rp2.450.000"
-              status="Terverifikasi"
-            />
-
-            <TransactionRow
-              id="#TRX-2024-891"
-              name="Bpk. Bambang Sutrisno"
-              location="Padepokan Klaten Panji"
-              amount="Rp600.000"
-              status="Terverifikasi"
-            />
+            {visibleTransactions.length ? visibleTransactions.map((item) => (
+              <TransactionRow key={item.id} {...item} onClick={() => navigate("payment")} />
+            )) : <p className="p-6 text-sm text-slate-500">Tidak ada transaksi yang cocok dengan pencarian.</p>}
           </div>
         </section>
 
@@ -665,26 +693,9 @@ function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
           </div>
 
           <div className="space-y-4 p-6">
-            <Masterclass
-              time="09:00"
-              title="Pahat Karakter Wajah Panji"
-              maestro="Ki Suwito"
-              place="Kampung Topeng Malang"
-            />
-
-            <Masterclass
-              time="13:00"
-              title="Sungging Alami Pigmen Getah"
-              maestro="Mbah Rasimun"
-              place="Padepokan Klaten Panji"
-            />
-
-            <Masterclass
-              time="15:30"
-              title="Koreografi Tari Panji"
-              maestro="Dra. Endang"
-              place="Sanggar Cirebon"
-            />
+            {masterclasses.length ? masterclasses.map((item) => (
+              <Masterclass key={item.time} {...item} onClick={() => navigate("booking")} />
+            )) : <p className="text-sm text-slate-500">Tidak ada jadwal yang cocok dengan pencarian.</p>}
           </div>
         </section>
       </div>
@@ -715,24 +726,28 @@ function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
             number="01"
             name="Kampung Topeng Malang"
             visits="8.420 kunjungan"
+            onClick={() => navigate("exploration")}
           />
 
           <FavoriteCard
             number="02"
             name="Sanggar Cirebon Slangit"
             visits="6.280 kunjungan"
+            onClick={() => navigate("exploration")}
           />
 
           <FavoriteCard
             number="03"
             name="Padepokan Klaten Panji"
             visits="5.120 kunjungan"
+            onClick={() => navigate("exploration")}
           />
 
           <FavoriteCard
             number="04"
             name="Sentra Kayu Bobung"
             visits="4.760 kunjungan"
+            onClick={() => navigate("exploration")}
           />
         </div>
       </section>
@@ -749,14 +764,24 @@ function StatCard({
   value,
   subtitle,
   icon: Icon,
+  onClick,
 }: {
   title: string;
   value: string;
   subtitle: string;
   icon: any;
+  onClick?: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (onClick && (event.key === "Enter" || event.key === " ")) onClick();
+      }}
+      className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${onClick ? "cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md" : ""}`}
+    >
       <div className="mb-5 flex items-start justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           {title}
@@ -786,15 +811,17 @@ function TransactionRow({
   location,
   amount,
   status,
+  onClick,
 }: {
   id: string;
   name: string;
   location: string;
   amount: string;
   status: string;
+  onClick: () => void;
 }) {
   return (
-    <div className="flex items-center gap-4 p-5">
+    <button type="button" onClick={onClick} className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-slate-50">
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
         <CreditCard size={18} />
       </div>
@@ -820,7 +847,7 @@ function TransactionRow({
           {status}
         </span>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -833,14 +860,16 @@ function Masterclass({
   title,
   maestro,
   place,
+  onClick,
 }: {
   time: string;
   title: string;
   maestro: string;
   place: string;
+  onClick: () => void;
 }) {
   return (
-    <div className="flex gap-4 rounded-xl border border-slate-100 p-4">
+    <button type="button" onClick={onClick} className="flex w-full gap-4 rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50">
       <div className="flex w-14 flex-col items-center justify-center rounded-xl bg-emerald-50">
         <span className="text-xs font-bold text-emerald-700">{time}</span>
         <span className="mt-1 text-[9px] text-slate-400">WIB</span>
@@ -853,7 +882,7 @@ function Masterclass({
 
         <p className="mt-1 text-xs text-slate-400">{place}</p>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -865,13 +894,15 @@ function FavoriteCard({
   number,
   name,
   visits,
+  onClick,
 }: {
   number: string;
   name: string;
   visits: string;
+  onClick: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-slate-100 p-4">
+    <button type="button" onClick={onClick} className="w-full rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50">
       <div className="mb-4 flex items-center justify-between">
         <span className="text-xs font-bold text-slate-300">{number}</span>
 
@@ -881,7 +912,7 @@ function FavoriteCard({
       <h3 className="text-sm font-semibold leading-5 text-slate-800">{name}</h3>
 
       <p className="mt-2 text-xs text-slate-400">{visits}</p>
-    </div>
+    </button>
   );
 }
 
@@ -889,56 +920,200 @@ function FavoriteCard({
 // GENERIC PAGE
 // =============================================================
 
+type DataRecord = {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  date: string;
+  amount: string;
+  status: string;
+  createdAt: string;
+};
+
+type DataDraft = Omit<DataRecord, "id" | "createdAt">;
+
+const EMPTY_DRAFT: DataDraft = {
+  name: "",
+  description: "",
+  location: "",
+  date: "",
+  amount: "",
+  status: "Aktif",
+};
+
+type GenericPageKind = Exclude<Page, "login" | "dashboard" | "profile">;
+
+type ContentProfile = {
+  fields: [string, string, string, string, string];
+  statuses: string[];
+  records: DataDraft[];
+};
+
+// Labels and starter records follow the visitor journeys in the IA. The
+// existing page layout stays the same; only the meaning of its fields changes.
+const CONTENT_PROFILES: Record<GenericPageKind, ContentProfile> = {
+  exploration: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data exploration", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  panji: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data panji", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  materi: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data materi", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  booking: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data booking", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  progres: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data progres", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  ticketing: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data ticketing", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  payment: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data payment", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  notification: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data notification", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  faq: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data faq", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  },
+  users: {
+    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
+    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    records: [
+      { name: "Contoh data users", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+    ],
+  }
+};
+
 function GenericPage({
+  kind,
   title,
   description,
   icon: Icon,
   navigate,
+  query,
+  onQueryChange,
 }: {
+  kind: GenericPageKind;
   title: string;
   description: string;
   icon: any;
   navigate: (page: Page) => void;
+  query: string;
+  onQueryChange: (value: string) => void;
 }) {
-  const seedItems = [
-    "Kampung Topeng Malang",
-    "Sanggar Cirebon Slangit",
-    "Padepokan Klaten Panji",
-    "Sentra Topeng Kayu Bobung",
-    "Komunitas Tari Sekar",
-  ];
-  const storageKey = `jelajah-topeng:${title}`;
-  const [items, setItems] = useState<string[]>(() => {
+  const profile = CONTENT_PROFILES[kind];
+  const storageKey = `jelajah-topeng:content:${kind}`;
+  const [items, setItems] = useState<DataRecord[]>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
       const parsed: unknown = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) &&
-        parsed.every((item) => typeof item === "string")
-        ? parsed
-        : seedItems;
+      if (Array.isArray(parsed)) {
+        return parsed.flatMap((item, index): DataRecord[] => {
+          if (typeof item === "string") {
+            return [{
+              id: `legacy-${index}-${item}`,
+              name: item,
+              description: "Data kuratorial Jelajah Topeng",
+              location: "",
+              date: "",
+              amount: "",
+              status: "Aktif",
+              createdAt: new Date(0).toISOString(),
+            }];
+          }
+          if (item && typeof item === "object" && "name" in item && typeof item.name === "string") {
+            const record = item as Partial<DataRecord>;
+            return [{
+              id: record.id ?? `saved-${index}-${record.name}`,
+              name: item.name,
+              description: record.description ?? "",
+              location: record.location ?? "",
+              date: record.date ?? "",
+              amount: record.amount ?? "",
+              status: record.status ?? "Aktif",
+              createdAt: record.createdAt ?? new Date(0).toISOString(),
+            }];
+          }
+          return [];
+        });
+      }
+      return profile.records.map((record, index) => ({
+        ...record,
+        id: `seed-${kind}-${index}`,
+        createdAt: new Date(0).toISOString(),
+      }));
     } catch {
-      return seedItems;
+      return [];
     }
   });
-  const [query, setQuery] = useState("");
   const [sortAZ, setSortAZ] = useState(false);
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [newItem, setNewItem] = useState("");
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<DataDraft>(EMPTY_DRAFT);
+  const [selectedItem, setSelectedItem] = useState<DataRecord | null>(null);
   const [message, setMessage] = useState("");
   const pageSize = 3;
   const matchingItems = items
-    .filter((item) => item.toLowerCase().includes(query.trim().toLowerCase()))
-    .sort((a, b) => (sortAZ ? a.localeCompare(b, "id") : 0));
+    .filter((item) => `${item.name} ${item.description} ${item.location} ${item.status}`.toLowerCase().includes(query.trim().toLowerCase()))
+    .sort((a, b) => sortAZ
+      ? a.name.localeCompare(b.name, "id")
+      : b.createdAt.localeCompare(a.createdAt));
   const pageCount = Math.max(1, Math.ceil(matchingItems.length / pageSize));
+  const firstStatus = profile.statuses[0];
+  const secondStatus = profile.statuses[1] ?? profile.statuses[0];
+  const latestUpdate = items.reduce<string | undefined>((latest, item) =>
+    Date.parse(item.createdAt) > 0 && (!latest || item.createdAt > latest)
+      ? item.createdAt
+      : latest, undefined);
   const currentPage = Math.min(page, pageCount);
   const visibleItems = matchingItems.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
   );
 
-  function saveItems(nextItems: string[]) {
+  function saveItems(nextItems: DataRecord[]) {
     try {
       localStorage.setItem(storageKey, JSON.stringify(nextItems));
       setItems(nextItems);
@@ -950,18 +1125,51 @@ function GenericPage({
     }
   }
 
-  function handleAdd(e: React.FormEvent<HTMLFormElement>) {
+  function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const value = newItem.trim();
-    if (!value) return;
-    if (items.some((item) => item.toLowerCase() === value.toLowerCase())) {
+    const name = draft.name.trim();
+    if (!name) return;
+    if (items.some((item) => item.name.toLowerCase() === name.toLowerCase() && item.id !== selectedItem?.id)) {
       setMessage("Data dengan nama tersebut sudah ada.");
       return;
     }
-    saveItems([...items, value]);
-    setNewItem("");
+    const now = new Date().toISOString();
+    const record: DataRecord = {
+      ...draft,
+      name,
+      description: draft.description.trim(),
+      location: draft.location.trim(),
+      amount: draft.amount.trim(),
+      id: selectedItem?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      createdAt: now,
+    };
+    saveItems(adding ? [...items, record] : items.map((item) => item.id === record.id ? record : item));
     setAdding(false);
-    setPage(Math.ceil((matchingItems.length + 1) / pageSize));
+    setEditing(false);
+    setSelectedItem(null);
+    setDraft(EMPTY_DRAFT);
+    setPage(1);
+  }
+
+  function openEdit(item: DataRecord) {
+    setSelectedItem(item);
+    setDraft({
+      name: item.name,
+      description: item.description,
+      location: item.location,
+      date: item.date,
+      amount: item.amount,
+      status: item.status,
+    });
+    setAdding(false);
+    setEditing(true);
+  }
+
+  function deleteSelected() {
+    if (!selectedItem) return;
+    saveItems(items.filter((item) => item.id !== selectedItem.id));
+    setSelectedItem(null);
+    setEditing(false);
   }
 
   return (
@@ -987,6 +1195,9 @@ function GenericPage({
           type="button"
           onClick={() => {
             setMessage("");
+            setSelectedItem(null);
+            setEditing(false);
+            setDraft(EMPTY_DRAFT);
             setAdding(true);
           }}
           className="flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
@@ -1012,21 +1223,21 @@ function GenericPage({
           icon={Grid2X2}
         />
         <StatCard
-          title="Aktif"
-          value={String(items.length)}
-          subtitle="Status aktif"
+          title={firstStatus}
+          value={String(items.filter((item) => item.status === firstStatus).length)}
+          subtitle={`Data berstatus ${firstStatus.toLowerCase()}`}
           icon={ShieldCheck}
         />
         <StatCard
-          title="Perlu Review"
-          value="0"
-          subtitle="Tidak ada antrean demo"
+          title={secondStatus}
+          value={String(items.filter((item) => item.status === secondStatus).length)}
+          subtitle={`Data berstatus ${secondStatus.toLowerCase()}`}
           icon={Eye}
         />
         <StatCard
-          title="Terakhir Update"
-          value="Hari Ini"
-          subtitle="Data lokal"
+          title="Pembaruan Terakhir"
+          value={latestUpdate ? new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short" }).format(new Date(latestUpdate)) : "Contoh"}
+          subtitle={latestUpdate ? "Disimpan di browser ini" : "Data awal dari IA"}
           icon={TrendingUp}
         />
       </div>
@@ -1048,7 +1259,7 @@ function GenericPage({
               <input
                 value={query}
                 onChange={(e) => {
-                  setQuery(e.target.value);
+                  onQueryChange(e.target.value);
                   setPage(1);
                 }}
                 placeholder="Cari data..."
@@ -1072,7 +1283,7 @@ function GenericPage({
         <div className="divide-y divide-slate-100">
           {visibleItems.length ? (
             visibleItems.map((item, index) => (
-              <div key={item} className="flex items-center gap-4 px-6 py-5">
+              <div key={item.id} className="flex items-center gap-4 px-6 py-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-500">
                   {String((currentPage - 1) * pageSize + index + 1).padStart(
                     2,
@@ -1081,18 +1292,18 @@ function GenericPage({
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-slate-800">
-                    {item}
+                    {item.name}
                   </h3>
                   <p className="mt-1 text-xs text-slate-400">
-                    Data kuratorial Jelajah Topeng
+                    {[item.location, item.description].filter(Boolean).join(" · ") || "Data kuratorial Jelajah Topeng"}
                   </p>
                 </div>
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                  Aktif
+        <span className={`rounded-full px-3 py-1 text-xs font-medium ${["Aktif", "Selesai", "Dikonfirmasi", "Terverifikasi", "Tersedia", "Terbit", "Terkirim"].includes(item.status) ? "bg-emerald-50 text-emerald-700" : ["Menunggu Review", "Menunggu konfirmasi", "Draft", "Berlangsung", "Perlu verifikasi", "Perlu dilengkapi"].includes(item.status) ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
+                  {item.status}
                 </span>
                 <button
                   type="button"
-                  aria-label={`Lihat ${item}`}
+                  aria-label={`Lihat ${item.name}`}
                   onClick={() => setSelectedItem(item)}
                   className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
                 >
@@ -1100,11 +1311,11 @@ function GenericPage({
                 </button>
                 <button
                   type="button"
-                  aria-label={`Detail ${item}`}
-                  onClick={() => setSelectedItem(item)}
+                  aria-label={`Edit ${item.name}`}
+                  onClick={() => openEdit(item)}
                   className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
                 >
-                  <ChevronRight size={16} />
+                  <Pencil size={15} />
                 </button>
               </div>
             ))
@@ -1167,6 +1378,7 @@ function GenericPage({
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setAdding(false);
+              setEditing(false);
               setSelectedItem(null);
             }
           }}
@@ -1181,55 +1393,120 @@ function GenericPage({
               id="data-dialog-title"
               className="text-lg font-bold text-slate-900"
             >
-              {adding ? "Tambah Data Baru" : "Detail Data"}
+              {adding ? "Tambah Data Baru" : editing ? "Edit Data" : "Detail Data"}
             </h2>
-            {adding ? (
-              <form onSubmit={handleAdd}>
+            {adding || editing ? (
+              <form onSubmit={handleSave} className="mt-4 space-y-3">
                 <label
                   htmlFor="new-data"
-                  className="mt-5 block text-sm font-medium text-slate-700"
+                  className="block text-sm font-medium text-slate-700"
                 >
-                  Nama data
+                  {profile.fields[0]}
                 </label>
                 <input
                   id="new-data"
                   autoFocus
-                  value={newItem}
-                  onChange={(e) => setNewItem(e.target.value)}
+                  required
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                   className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
                 />
+                <label className="block text-sm font-medium text-slate-700">
+                  {profile.fields[1]}
+                  <textarea
+                    value={draft.description}
+                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                    rows={3}
+                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-slate-700">
+                  {profile.fields[2]}
+                  <input
+                    value={draft.location}
+                    onChange={(e) => setDraft({ ...draft, location: e.target.value })}
+                    className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-sm font-medium text-slate-700">
+                    {profile.fields[3]}
+                    <input
+                      type="text"
+                      value={draft.date}
+                      onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+                      placeholder={profile.fields[3]}
+                      className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                    />
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">
+                    {profile.fields[4]}
+                    <input
+                      value={draft.amount}
+                      onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
+                      placeholder={profile.fields[4]}
+                      className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                    />
+                  </label>
+                </div>
+                <label className="block text-sm font-medium text-slate-700">
+                  Status
+                  <select
+                    value={draft.status}
+                    onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+                    className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-emerald-600"
+                  >
+                    {profile.statuses.map((status) => (
+                      <option key={status}>{status}</option>
+                    ))}
+                  </select>
+                </label>
                 <div className="mt-6 flex justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => setAdding(false)}
+                    onClick={() => { setAdding(false); setEditing(false); setSelectedItem(null); }}
                     className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
-                    disabled={!newItem.trim()}
+                    disabled={!draft.name.trim()}
                     className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   >
-                    Simpan
+                    {editing ? "Simpan Perubahan" : "Simpan"}
                   </button>
                 </div>
               </form>
             ) : (
               <>
-                <p className="mt-4 text-sm text-slate-600">{selectedItem}</p>
-                <p className="mt-2 text-xs text-slate-400">
-                  Data contoh kuratorial. Data baru disimpan di browser yang
-                  sedang digunakan.
-                </p>
-                <div className="mt-6 flex justify-end">
+                <dl className="mt-5 space-y-3 text-sm">
+                  <div><dt className="text-xs text-slate-400">{profile.fields[0]}</dt><dd className="font-semibold text-slate-800">{selectedItem?.name}</dd></div>
+                  <div><dt className="text-xs text-slate-400">{profile.fields[1]}</dt><dd className="text-slate-700">{selectedItem?.description || "—"}</dd></div>
+                  <div><dt className="text-xs text-slate-400">{profile.fields[2]}</dt><dd className="text-slate-700">{selectedItem?.location || "—"}</dd></div>
+                  <div className="grid grid-cols-2 gap-3"><div><dt className="text-xs text-slate-400">{profile.fields[3]}</dt><dd className="text-slate-700">{selectedItem?.date || "—"}</dd></div><div><dt className="text-xs text-slate-400">{profile.fields[4]}</dt><dd className="text-slate-700">{selectedItem?.amount || "—"}</dd></div></div>
+                  <div><dt className="text-xs text-slate-400">Status</dt><dd className="text-slate-700">{selectedItem?.status}</dd></div>
+                </dl>
+                <div className="mt-6 flex justify-between">
                   <button
                     type="button"
-                    onClick={() => setSelectedItem(null)}
-                    className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+                    onClick={deleteSelected}
+                    className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                   >
-                    Tutup
+                    <Trash2 size={15} /> Hapus
                   </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedItem(null)}
+                      className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
+                    >Tutup</button>
+                    <button
+                      type="button"
+                      onClick={() => selectedItem && openEdit(selectedItem)}
+                      className="flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+                    ><Pencil size={14} /> Edit</button>
+                  </div>
                 </div>
               </>
             )}
