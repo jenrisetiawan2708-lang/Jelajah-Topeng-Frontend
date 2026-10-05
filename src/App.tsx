@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState } from "react";
+import Login from "./components/Login";
+import { LOCAL_ADMIN_KEY, LOCAL_SESSION_KEY } from "./lib/localAuth";
 import {
-  ArrowRight,
   Bell,
   BookOpen,
   CalendarDays,
@@ -9,14 +10,11 @@ import {
   Compass,
   CreditCard,
   Eye,
-  EyeOff,
   Grid2X2,
   Landmark,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
-  Menu,
-  Package,
   Search,
   Settings,
   ShieldCheck,
@@ -26,217 +24,54 @@ import {
   UserCog,
   Users,
   WalletCards,
-  X,
-} from 'lucide-react'
+} from "lucide-react";
 
-import logo from './assets/logo-jelajah-topeng.png'
+import logo from "./assets/logo-jelajah-topeng.png";
 
 type Page =
-  | 'login'
-  | 'dashboard'
-  | 'exploration'
-  | 'panji'
-  | 'materi'
-  | 'booking'
-  | 'progres'
-  | 'ticketing'
-  | 'payment'
-  | 'notification'
-  | 'faq'
-  | 'users'
-  | 'profile'
+  | "login"
+  | "dashboard"
+  | "exploration"
+  | "panji"
+  | "materi"
+  | "booking"
+  | "progres"
+  | "ticketing"
+  | "payment"
+  | "notification"
+  | "faq"
+  | "users"
+  | "profile";
 
 function App() {
-  const [page, setPage] = useState<Page>('login')
-
-  const [showPassword, setShowPassword] = useState(false)
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [page, setPage] = useState<Page>(() => {
+    try {
+      return localStorage.getItem(LOCAL_SESSION_KEY) ||
+        sessionStorage.getItem(LOCAL_SESSION_KEY)
+        ? "dashboard"
+        : "login";
+    } catch {
+      return "login";
+    }
+  });
 
   const navigate = (target: Page) => {
-    setPage(target)
-  }
+    if (target === "login") {
+      localStorage.removeItem(LOCAL_SESSION_KEY);
+      sessionStorage.removeItem(LOCAL_SESSION_KEY);
+      setPage("login");
+      return;
+    }
+
+    setPage(target);
+  };
 
   // =========================================================
   // LOGIN
   // =========================================================
 
-  if (page === 'login') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        {/* TOP BRAND */}
-        <header className="flex h-[82px] items-center border-b border-gray-200 bg-white px-8">
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="Logo Jelajah Topeng"
-              className="h-11 w-11 object-contain"
-            />
-
-            <div>
-              <h1 className="text-sm font-bold text-gray-900">
-                Jelajah Topeng
-              </h1>
-
-              <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
-                Admin Panel Kuratorial
-              </p>
-            </div>
-          </div>
-
-          <div className="ml-auto flex items-center gap-2 text-xs text-gray-500">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Sistem Online
-          </div>
-        </header>
-
-        {/* LOGIN CONTENT */}
-        <main className="flex min-h-[calc(100vh-82px)] items-center justify-center px-6 py-12">
-          <div className="w-full max-w-[460px]">
-            {/* HEADING */}
-            <div className="mb-8 text-center">
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <LockKeyhole size={25} />
-              </div>
-
-              <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-                Portal Masuk Administrator
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-gray-500">
-                Masuk untuk mengakses konsol kurasi Jelajah Topeng.
-              </p>
-            </div>
-
-            {/* LOGIN CARD */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-7 shadow-sm">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  navigate('dashboard')
-                }}
-                className="space-y-5"
-              >
-                {/* EMAIL */}
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="mb-2 block text-sm font-semibold text-gray-700"
-                  >
-                    Email Administrator
-                  </label>
-
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nama@jelajahtopeng.id"
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                  />
-                </div>
-
-                {/* PASSWORD */}
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-semibold text-gray-700"
-                    >
-                      Kata Sandi
-                    </label>
-
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
-                    >
-                      Lupa kata sandi?
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Masukkan kata sandi"
-                      className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 pr-11 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* REMEMBER */}
-                <div className="flex items-center">
-                  <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-500">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 accent-emerald-600"
-                    />
-
-                    Ingat saya di peramban ini
-                  </label>
-                </div>
-
-                {/* LOGIN BUTTON */}
-                <button
-                  type="submit"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 text-sm font-semibold text-white transition hover:bg-emerald-800"
-                >
-                  Masuk ke Dashboard Kurasi
-                  <ArrowRight size={17} />
-                </button>
-
-                {/* DIVIDER */}
-                <div className="flex items-center gap-3 py-1">
-                  <div className="h-px flex-1 bg-gray-200" />
-
-                  <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
-                    atau
-                  </span>
-
-                  <div className="h-px flex-1 bg-gray-200" />
-                </div>
-
-                {/* SSO */}
-                <button
-                  type="button"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-600 transition hover:bg-gray-50"
-                >
-                  <ShieldCheck size={17} />
-
-                  Otentikasi Akun Belajar / SSO Institusi Mitra
-                </button>
-              </form>
-            </div>
-
-            {/* SECURITY */}
-            <div className="mt-5 flex items-center justify-center gap-2 text-xs text-gray-400">
-              <LockKeyhole size={13} />
-
-              Koneksi Terenkripsi SSL 256-bit
-            </div>
-
-            <p className="mt-4 text-center text-[11px] text-gray-400">
-              © 2026 Jelajah Topeng · Admin Panel Kuratorial
-            </p>
-          </div>
-        </main>
-      </div>
-    )
+  if (page === "login") {
+    return <Login onLogin={() => setPage("dashboard")} />;
   }
 
   // =========================================================
@@ -245,88 +80,88 @@ function App() {
 
   const mainMenus = [
     {
-      id: 'dashboard' as Page,
-      label: 'Dashboard',
+      id: "dashboard" as Page,
+      label: "Dashboard",
       icon: LayoutDashboard,
     },
     {
-      id: 'exploration' as Page,
-      label: 'Eksplorasi Kampung',
+      id: "exploration" as Page,
+      label: "Eksplorasi Kampung",
       icon: Compass,
     },
     {
-      id: 'panji' as Page,
-      label: 'Jejak Sang Panji',
+      id: "panji" as Page,
+      label: "Jejak Sang Panji",
       icon: Landmark,
     },
     {
-      id: 'materi' as Page,
-      label: 'Materi & Maestro',
+      id: "materi" as Page,
+      label: "Materi & Maestro",
       icon: BookOpen,
     },
     {
-      id: 'booking' as Page,
-      label: 'Jadwal & Booking',
+      id: "booking" as Page,
+      label: "Jadwal & Booking",
       icon: CalendarDays,
     },
     {
-      id: 'progres' as Page,
-      label: 'Progres Budaya',
+      id: "progres" as Page,
+      label: "Progres Budaya",
       icon: TrendingUp,
     },
-  ]
+  ];
 
   const operationalMenus = [
     {
-      id: 'ticketing' as Page,
-      label: 'Paket & Ticketing',
+      id: "ticketing" as Page,
+      label: "Paket & Ticketing",
       icon: Ticket,
     },
     {
-      id: 'payment' as Page,
-      label: 'Pembayaran & Transaksi',
+      id: "payment" as Page,
+      label: "Pembayaran & Transaksi",
       icon: CreditCard,
     },
     {
-      id: 'notification' as Page,
-      label: 'Kelola Notifikasi',
+      id: "notification" as Page,
+      label: "Kelola Notifikasi",
       icon: Bell,
     },
     {
-      id: 'faq' as Page,
-      label: 'FAQ & Pusat Bantuan',
+      id: "faq" as Page,
+      label: "FAQ & Pusat Bantuan",
       icon: CircleHelp,
     },
-  ]
+  ];
 
   const systemMenus = [
     {
-      id: 'users' as Page,
-      label: 'Akun Pengguna',
+      id: "users" as Page,
+      label: "Akun Pengguna",
       icon: Users,
     },
     {
-      id: 'profile' as Page,
-      label: 'Profil Admin',
+      id: "profile" as Page,
+      label: "Profil Admin",
       icon: UserCog,
     },
-  ]
+  ];
 
   const pageNames: Record<Page, string> = {
-    login: 'Login',
-    dashboard: 'Dashboard',
-    exploration: 'Eksplorasi Kampung',
-    panji: 'Jejak Sang Panji',
-    materi: 'Materi & Maestro',
-    booking: 'Jadwal & Booking',
-    progres: 'Progres Budaya',
-    ticketing: 'Paket & Ticketing',
-    payment: 'Pembayaran & Transaksi',
-    notification: 'Kelola Notifikasi',
-    faq: 'FAQ & Pusat Bantuan',
-    users: 'Akun Pengguna',
-    profile: 'Profil Admin',
-  }
+    login: "Login",
+    dashboard: "Dashboard",
+    exploration: "Eksplorasi Kampung",
+    panji: "Jejak Sang Panji",
+    materi: "Materi & Maestro",
+    booking: "Jadwal & Booking",
+    progres: "Progres Budaya",
+    ticketing: "Paket & Ticketing",
+    payment: "Pembayaran & Transaksi",
+    notification: "Kelola Notifikasi",
+    faq: "FAQ & Pusat Bantuan",
+    users: "Akun Pengguna",
+    profile: "Profil Admin",
+  };
 
   return (
     <div className="min-h-screen bg-[#f7f9fc] text-slate-900">
@@ -369,8 +204,8 @@ function App() {
 
             <nav className="space-y-1">
               {mainMenus.map((item) => {
-                const Icon = item.icon
-                const active = page === item.id
+                const Icon = item.icon;
+                const active = page === item.id;
 
                 return (
                   <button
@@ -378,15 +213,15 @@ function App() {
                     onClick={() => navigate(item.id)}
                     className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${
                       active
-                        ? 'bg-emerald-700 text-white shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-700'
+                        ? "bg-emerald-700 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-emerald-700"
                     }`}
                   >
                     <Icon size={19} strokeWidth={1.8} />
 
                     <span>{item.label}</span>
                   </button>
-                )
+                );
               })}
             </nav>
 
@@ -396,8 +231,8 @@ function App() {
 
             <nav className="space-y-1">
               {operationalMenus.map((item) => {
-                const Icon = item.icon
-                const active = page === item.id
+                const Icon = item.icon;
+                const active = page === item.id;
 
                 return (
                   <button
@@ -405,15 +240,15 @@ function App() {
                     onClick={() => navigate(item.id)}
                     className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${
                       active
-                        ? 'bg-emerald-700 text-white shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-700'
+                        ? "bg-emerald-700 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-emerald-700"
                     }`}
                   >
                     <Icon size={19} strokeWidth={1.8} />
 
                     <span>{item.label}</span>
                   </button>
-                )
+                );
               })}
             </nav>
 
@@ -423,8 +258,8 @@ function App() {
 
             <nav className="space-y-1">
               {systemMenus.map((item) => {
-                const Icon = item.icon
-                const active = page === item.id
+                const Icon = item.icon;
+                const active = page === item.id;
 
                 return (
                   <button
@@ -432,22 +267,22 @@ function App() {
                     onClick={() => navigate(item.id)}
                     className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${
                       active
-                        ? 'bg-emerald-700 text-white shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-emerald-700'
+                        ? "bg-emerald-700 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-emerald-700"
                     }`}
                   >
                     <Icon size={19} strokeWidth={1.8} />
 
                     <span>{item.label}</span>
                   </button>
-                )
+                );
               })}
             </nav>
           </div>
 
           {/* USER CARD */}
           <button
-            onClick={() => navigate('profile')}
+            onClick={() => navigate("profile")}
             className="mx-4 mb-5 flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-left transition hover:bg-emerald-50"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white">
@@ -459,9 +294,7 @@ function App() {
                 Raden Arya, S.Sn
               </p>
 
-              <p className="text-[11px] text-slate-400">
-                Super Admin Panji
-              </p>
+              <p className="text-[11px] text-slate-400">Super Admin Panji</p>
             </div>
 
             <ShieldCheck size={17} className="text-emerald-700" />
@@ -480,16 +313,13 @@ function App() {
           <header className="sticky top-0 z-20 flex h-[78px] items-center border-b border-slate-200 bg-white px-8">
             {/* BREADCRUMB */}
             <button
-              onClick={() => navigate('dashboard')}
+              onClick={() => navigate("dashboard")}
               className="flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-700"
             >
               Jelajah Topeng
             </button>
 
-            <ChevronRight
-              size={17}
-              className="mx-2 text-slate-300"
-            />
+            <ChevronRight size={17} className="mx-2 text-slate-300" />
 
             <span className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
               {pageNames[page]}
@@ -515,7 +345,7 @@ function App() {
 
               {/* NOTIFICATION */}
               <button
-                onClick={() => navigate('notification')}
+                onClick={() => navigate("notification")}
                 className="relative text-slate-500 transition hover:text-emerald-700"
               >
                 <Bell size={20} />
@@ -525,7 +355,7 @@ function App() {
 
               {/* SETTINGS */}
               <button
-                onClick={() => navigate('profile')}
+                onClick={() => navigate("profile")}
                 className="text-slate-500 transition hover:text-emerald-700"
               >
                 <Settings size={20} />
@@ -535,7 +365,7 @@ function App() {
 
               {/* PROFILE */}
               <button
-                onClick={() => navigate('profile')}
+                onClick={() => navigate("profile")}
                 className="flex items-center gap-3 text-left"
               >
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">
@@ -547,9 +377,7 @@ function App() {
                     Raden Arya, S.Sn
                   </p>
 
-                  <p className="text-[10px] text-slate-400">
-                    Super Admin
-                  </p>
+                  <p className="text-[10px] text-slate-400">Super Admin</p>
                 </div>
               </button>
             </div>
@@ -560,9 +388,9 @@ function App() {
           ================================================= */}
 
           <main className="flex-1 p-8">
-            {page === 'dashboard' && <Dashboard navigate={navigate} />}
+            {page === "dashboard" && <Dashboard navigate={navigate} />}
 
-            {page === 'exploration' && (
+            {page === "exploration" && (
               <GenericPage
                 title="Direktori & Kurasi Sentra Budaya"
                 description="Kelola data sentra budaya, sanggar, lokasi artefak, dan status verifikasi."
@@ -571,7 +399,7 @@ function App() {
               />
             )}
 
-            {page === 'panji' && (
+            {page === "panji" && (
               <GenericPage
                 title="Jejak Sang Panji"
                 description="Manajemen tahapan clue, rute petualangan budaya, dan distribusi reward."
@@ -580,7 +408,7 @@ function App() {
               />
             )}
 
-            {page === 'materi' && (
+            {page === "materi" && (
               <GenericPage
                 title="Kelola Materi & Profil Maestro"
                 description="Direktori data maestro seni topeng tradisional Nusantara dan modul materi ajar kuratorial."
@@ -589,7 +417,7 @@ function App() {
               />
             )}
 
-            {page === 'booking' && (
+            {page === "booking" && (
               <GenericPage
                 title="Kelola Jadwal & Booking Maestro"
                 description="Pantau kalender reservasi workshop budaya, masterclass, dan kunjungan sentra."
@@ -598,7 +426,7 @@ function App() {
               />
             )}
 
-            {page === 'progres' && (
+            {page === "progres" && (
               <GenericPage
                 title="Progresan Pelestarian Budaya"
                 description="Pemantauan capaian target misi, keterlibatan peserta, dan distribusi poin reward."
@@ -607,7 +435,7 @@ function App() {
               />
             )}
 
-            {page === 'ticketing' && (
+            {page === "ticketing" && (
               <GenericPage
                 title="Kelola Tiket & Paket Kunjungan"
                 description="Manajemen kuota, harga paket edukasi sanggar, dan status publikasi tiket."
@@ -616,7 +444,7 @@ function App() {
               />
             )}
 
-            {page === 'payment' && (
+            {page === "payment" && (
               <GenericPage
                 title="Kelola Pembayaran & Transaksi"
                 description="Log transaksi masuk, verifikasi pelunasan tiket, dan rekonsiliasi dana maestro."
@@ -625,7 +453,7 @@ function App() {
               />
             )}
 
-            {page === 'notification' && (
+            {page === "notification" && (
               <GenericPage
                 title="Kelola & Siaran Notifikasi"
                 description="Kirim pengumuman kurasi, pengingat jadwal masterclass, dan pemberitahuan sistem."
@@ -634,7 +462,7 @@ function App() {
               />
             )}
 
-            {page === 'faq' && (
+            {page === "faq" && (
               <GenericPage
                 title="Kelola FAQ & Pusat Bantuan"
                 description="Kelola daftar pertanyaan yang sering diajukan, panduan kurasi, dan bantuan teknis."
@@ -643,7 +471,7 @@ function App() {
               />
             )}
 
-            {page === 'users' && (
+            {page === "users" && (
               <GenericPage
                 title="Kelola Akun Pengguna & Hak Akses"
                 description="Kelola otorisasi admin, kurator sanggar, maestro, dan staf operasional."
@@ -652,25 +480,22 @@ function App() {
               />
             )}
 
-            {page === 'profile' && (
-              <ProfilePage navigate={navigate} />
-            )}
+            {page === "profile" && <ProfilePage navigate={navigate} />}
           </main>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================
 // DASHBOARD
 // =============================================================
 
-function Dashboard({
-  navigate,
-}: {
-  navigate: (page: Page) => void
-}) {
+function Dashboard({ navigate }: { navigate: (page: Page) => void }) {
+  const [period, setPeriod] = useState("30 Hari Terakhir");
+  const [showPeriods, setShowPeriods] = useState(false);
+
   return (
     <div>
       {/* HEADER */}
@@ -681,7 +506,7 @@ function Dashboard({
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Selamat Datang, Raden Arya! 
+            Selamat Datang, Raden Arya!
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
@@ -690,12 +515,40 @@ function Dashboard({
         </div>
 
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50">
-            30 Hari Terakhir
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              aria-expanded={showPeriods}
+              onClick={() => setShowPeriods((open) => !open)}
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
+            >
+              {period}
+            </button>
+            {showPeriods && (
+              <div className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                {[
+                  "7 Hari Terakhir",
+                  "30 Hari Terakhir",
+                  "90 Hari Terakhir",
+                ].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setPeriod(option);
+                      setShowPeriods(false);
+                    }}
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
-            onClick={() => navigate('booking')}
+            onClick={() => navigate("booking")}
             className="flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800"
           >
             + Buat Reservasi Baru
@@ -750,7 +603,7 @@ function Dashboard({
             </div>
 
             <button
-              onClick={() => navigate('payment')}
+              onClick={() => navigate("payment")}
               className="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
             >
               Lihat Semua
@@ -800,13 +653,11 @@ function Dashboard({
                 Masterclass Hari Ini
               </h2>
 
-              <p className="mt-1 text-xs text-slate-400">
-                Jadwal sesi budaya
-              </p>
+              <p className="mt-1 text-xs text-slate-400">Jadwal sesi budaya</p>
             </div>
 
             <button
-              onClick={() => navigate('booking')}
+              onClick={() => navigate("booking")}
               className="text-xs font-semibold text-emerald-700"
             >
               Lihat Jadwal
@@ -852,7 +703,7 @@ function Dashboard({
           </div>
 
           <button
-            onClick={() => navigate('exploration')}
+            onClick={() => navigate("exploration")}
             className="text-xs font-semibold text-emerald-700"
           >
             Kelola Sentra
@@ -886,7 +737,7 @@ function Dashboard({
         </div>
       </section>
     </div>
-  )
+  );
 }
 
 // =============================================================
@@ -899,10 +750,10 @@ function StatCard({
   subtitle,
   icon: Icon,
 }: {
-  title: string
-  value: string
-  subtitle: string
-  icon: any
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: any;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -920,11 +771,9 @@ function StatCard({
         {value}
       </h3>
 
-      <p className="mt-2 text-xs font-medium text-emerald-600">
-        {subtitle}
-      </p>
+      <p className="mt-2 text-xs font-medium text-emerald-600">{subtitle}</p>
     </div>
-  )
+  );
 }
 
 // =============================================================
@@ -938,11 +787,11 @@ function TransactionRow({
   amount,
   status,
 }: {
-  id: string
-  name: string
-  location: string
-  amount: string
-  status: string
+  id: string;
+  name: string;
+  location: string;
+  amount: string;
+  status: string;
 }) {
   return (
     <div className="flex items-center gap-4 p-5">
@@ -953,9 +802,7 @@ function TransactionRow({
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold text-emerald-700">{id}</p>
 
-        <p className="mt-1 text-sm font-semibold text-slate-800">
-          {name}
-        </p>
+        <p className="mt-1 text-sm font-semibold text-slate-800">{name}</p>
 
         <p className="text-xs text-slate-400">{location}</p>
       </div>
@@ -965,16 +812,16 @@ function TransactionRow({
 
         <span
           className={`mt-1 inline-flex rounded-full px-2 py-1 text-[10px] font-semibold ${
-            status === 'Terverifikasi'
-              ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-amber-50 text-amber-700'
+            status === "Terverifikasi"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-amber-50 text-amber-700"
           }`}
         >
           {status}
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================
@@ -987,10 +834,10 @@ function Masterclass({
   maestro,
   place,
 }: {
-  time: string
-  title: string
-  maestro: string
-  place: string
+  time: string;
+  title: string;
+  maestro: string;
+  place: string;
 }) {
   return (
     <div className="flex gap-4 rounded-xl border border-slate-100 p-4">
@@ -1000,16 +847,14 @@ function Masterclass({
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-slate-800">
-          {title}
-        </h3>
+        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
 
         <p className="mt-1 text-xs text-emerald-700">{maestro}</p>
 
         <p className="mt-1 text-xs text-slate-400">{place}</p>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================
@@ -1021,27 +866,23 @@ function FavoriteCard({
   name,
   visits,
 }: {
-  number: string
-  name: string
-  visits: string
+  number: string;
+  name: string;
+  visits: string;
 }) {
   return (
     <div className="rounded-xl border border-slate-100 p-4">
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-300">
-          {number}
-        </span>
+        <span className="text-xs font-bold text-slate-300">{number}</span>
 
         <TrendingUp size={16} className="text-emerald-600" />
       </div>
 
-      <h3 className="text-sm font-semibold leading-5 text-slate-800">
-        {name}
-      </h3>
+      <h3 className="text-sm font-semibold leading-5 text-slate-800">{name}</h3>
 
       <p className="mt-2 text-xs text-slate-400">{visits}</p>
     </div>
-  )
+  );
 }
 
 // =============================================================
@@ -1054,11 +895,75 @@ function GenericPage({
   icon: Icon,
   navigate,
 }: {
-  title: string
-  description: string
-  icon: any
-  navigate: (page: Page) => void
+  title: string;
+  description: string;
+  icon: any;
+  navigate: (page: Page) => void;
 }) {
+  const seedItems = [
+    "Kampung Topeng Malang",
+    "Sanggar Cirebon Slangit",
+    "Padepokan Klaten Panji",
+    "Sentra Topeng Kayu Bobung",
+    "Komunitas Tari Sekar",
+  ];
+  const storageKey = `jelajah-topeng:${title}`;
+  const [items, setItems] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      const parsed: unknown = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) &&
+        parsed.every((item) => typeof item === "string")
+        ? parsed
+        : seedItems;
+    } catch {
+      return seedItems;
+    }
+  });
+  const [query, setQuery] = useState("");
+  const [sortAZ, setSortAZ] = useState(false);
+  const [page, setPage] = useState(1);
+  const [adding, setAdding] = useState(false);
+  const [newItem, setNewItem] = useState("");
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const pageSize = 3;
+  const matchingItems = items
+    .filter((item) => item.toLowerCase().includes(query.trim().toLowerCase()))
+    .sort((a, b) => (sortAZ ? a.localeCompare(b, "id") : 0));
+  const pageCount = Math.max(1, Math.ceil(matchingItems.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const visibleItems = matchingItems.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  function saveItems(nextItems: string[]) {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(nextItems));
+      setItems(nextItems);
+      setMessage("Data tersimpan di browser ini.");
+    } catch {
+      setMessage(
+        "Data tidak dapat disimpan. Periksa ruang penyimpanan browser.",
+      );
+    }
+  }
+
+  function handleAdd(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const value = newItem.trim();
+    if (!value) return;
+    if (items.some((item) => item.toLowerCase() === value.toLowerCase())) {
+      setMessage("Data dengan nama tersebut sudah ada.");
+      return;
+    }
+    saveItems([...items, value]);
+    setNewItem("");
+    setAdding(false);
+    setPage(Math.ceil((matchingItems.length + 1) / pageSize));
+  }
+
   return (
     <div>
       <div className="mb-8 flex items-center justify-between">
@@ -1067,179 +972,333 @@ function GenericPage({
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
               Konsol Kuratorial
             </span>
-
             <span className="text-xs text-slate-400">
               • Diperbarui hari ini
             </span>
           </div>
-
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             {title}
           </h1>
-
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             {description}
           </p>
         </div>
-
-        <button className="flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800">
+        <button
+          type="button"
+          onClick={() => {
+            setMessage("");
+            setAdding(true);
+          }}
+          className="flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+        >
           + Tambah Data Baru
         </button>
       </div>
 
-      {/* STATS */}
+      {message && (
+        <div
+          role="status"
+          className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+        >
+          {message}
+        </div>
+      )}
+
       <div className="grid grid-cols-4 gap-5">
         <StatCard
           title="Total Data"
-          value="24"
-          subtitle="Data terdaftar"
+          value={String(items.length)}
+          subtitle="Data tersimpan di browser"
           icon={Grid2X2}
         />
-
         <StatCard
           title="Aktif"
-          value="18"
+          value={String(items.length)}
           subtitle="Status aktif"
           icon={ShieldCheck}
         />
-
         <StatCard
           title="Perlu Review"
-          value="4"
-          subtitle="Menunggu kurasi"
+          value="0"
+          subtitle="Tidak ada antrean demo"
           icon={Eye}
         />
-
         <StatCard
           title="Terakhir Update"
           value="Hari Ini"
-          subtitle="Sistem sinkron"
+          subtitle="Data lokal"
           icon={TrendingUp}
         />
       </div>
 
-      {/* CONTENT */}
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center gap-3 border-b border-slate-100 p-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
             <Icon size={19} />
           </div>
-
           <div>
-            <h2 className="text-sm font-bold text-slate-900">
-              Data {title}
-            </h2>
-
+            <h2 className="text-sm font-bold text-slate-900">Data {title}</h2>
             <p className="text-xs text-slate-400">
-              Daftar data yang dikelola oleh administrator.
+              Data tersimpan di browser ini.
             </p>
           </div>
-
           <div className="ml-auto flex items-center gap-3">
             <div className="flex h-10 w-[280px] items-center gap-2 rounded-xl bg-slate-50 px-3">
               <Search size={16} className="text-slate-400" />
-
               <input
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setPage(1);
+                }}
                 placeholder="Cari data..."
                 className="w-full bg-transparent text-sm outline-none"
               />
             </div>
-
-            <button className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600">
-              Filter
+            <button
+              type="button"
+              aria-pressed={sortAZ}
+              onClick={() => {
+                setSortAZ((value) => !value);
+                setPage(1);
+              }}
+              className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600"
+            >
+              {sortAZ ? "Urutan A–Z" : "Filter: terbaru"}
             </button>
           </div>
         </div>
 
         <div className="divide-y divide-slate-100">
-          {[
-            'Kampung Topeng Malang',
-            'Sanggar Cirebon Slangit',
-            'Padepokan Klaten Panji',
-            'Sentra Topeng Kayu Bobung',
-            'Komunitas Tari Sekar',
-          ].map((item, index) => (
-            <div
-              key={item}
-              className="flex items-center gap-4 px-6 py-5"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-500">
-                0{index + 1}
+          {visibleItems.length ? (
+            visibleItems.map((item, index) => (
+              <div key={item} className="flex items-center gap-4 px-6 py-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-500">
+                  {String((currentPage - 1) * pageSize + index + 1).padStart(
+                    2,
+                    "0",
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    {item}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Data kuratorial Jelajah Topeng
+                  </p>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                  Aktif
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Lihat ${item}`}
+                  onClick={() => setSelectedItem(item)}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Detail ${item}`}
+                  onClick={() => setSelectedItem(item)}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
+                >
+                  <ChevronRight size={16} />
+                </button>
               </div>
-
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-slate-800">
-                  {item}
-                </h3>
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Data kuratorial Jelajah Topeng
-                </p>
-              </div>
-
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                Aktif
-              </span>
-
-              <button className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700">
-                <Eye size={16} />
-              </button>
-
-              <button className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700">
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="px-6 py-8 text-center text-sm text-slate-500">
+              Tidak ada data yang cocok.
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
           <p className="text-xs text-slate-400">
-            Menampilkan <b className="text-slate-700">1–5</b> dari{' '}
-            <b className="text-slate-700">24</b> data
+            Menampilkan{" "}
+            <b className="text-slate-700">
+              {matchingItems.length ? (currentPage - 1) * pageSize + 1 : 0}–
+              {Math.min(currentPage * pageSize, matchingItems.length)}
+            </b>{" "}
+            dari <b className="text-slate-700">{matchingItems.length}</b> data
           </p>
-
           <div className="flex gap-2">
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-              1
-            </button>
-
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-              2
-            </button>
-
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
-              3
-            </button>
-
-            <button className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+              (pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  aria-current={currentPage === pageNumber ? "page" : undefined}
+                  onClick={() => setPage(pageNumber)}
+                  className={`rounded-lg border px-3 py-2 text-xs ${currentPage === pageNumber ? "border-emerald-700 bg-emerald-700 text-white" : "border-slate-200 text-slate-700"}`}
+                >
+                  {pageNumber}
+                </button>
+              ),
+            )}
+            <button
+              type="button"
+              aria-label="Halaman berikutnya"
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage((value) => Math.min(value + 1, pageCount))}
+              className="rounded-lg border border-slate-200 px-3 py-2 text-xs disabled:opacity-40"
+            >
               <ChevronRight size={14} />
             </button>
           </div>
         </div>
       </div>
 
-      {/* QUICK NAVIGATION */}
       <div className="mt-6 flex gap-3">
         <button
-          onClick={() => navigate('dashboard')}
+          onClick={() => navigate("dashboard")}
           className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
           ← Kembali ke Dashboard
         </button>
       </div>
+
+      {(adding || selectedItem) && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setAdding(false);
+              setSelectedItem(null);
+            }
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="data-dialog-title"
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <h2
+              id="data-dialog-title"
+              className="text-lg font-bold text-slate-900"
+            >
+              {adding ? "Tambah Data Baru" : "Detail Data"}
+            </h2>
+            {adding ? (
+              <form onSubmit={handleAdd}>
+                <label
+                  htmlFor="new-data"
+                  className="mt-5 block text-sm font-medium text-slate-700"
+                >
+                  Nama data
+                </label>
+                <input
+                  id="new-data"
+                  autoFocus
+                  value={newItem}
+                  onChange={(e) => setNewItem(e.target.value)}
+                  className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                />
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAdding(false)}
+                    className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newItem.trim()}
+                    className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p className="mt-4 text-sm text-slate-600">{selectedItem}</p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Data contoh kuratorial. Data baru disimpan di browser yang
+                  sedang digunakan.
+                </p>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItem(null)}
+                    className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
 // =============================================================
 // PROFILE
 // =============================================================
 
-function ProfilePage({
-  navigate,
-}: {
-  navigate: (page: Page) => void
-}) {
+type AdminProfile = {
+  firstName: string;
+  lastName: string;
+  title: string;
+  email: string;
+  phone: string;
+};
+
+const PROFILE_STORAGE_KEY = "jelajah-topeng:admin-profile";
+const DEFAULT_PROFILE: AdminProfile = {
+  firstName: "Raden",
+  lastName: "Arya, S.Sn",
+  title: "Super Admin & Kepala Kurator Pelestarian Seni Tari Panji",
+  email: "raden.arya@jelajahtopeng.id",
+  phone: "+62 812-3456-7890",
+};
+
+function readProfile(): AdminProfile {
+  try {
+    const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+    return saved
+      ? { ...DEFAULT_PROFILE, ...JSON.parse(saved) }
+      : DEFAULT_PROFILE;
+  } catch {
+    return DEFAULT_PROFILE;
+  }
+}
+
+function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
+  const [profile, setProfile] = useState<AdminProfile>(readProfile);
+  const [message, setMessage] = useState("");
+
+  function updateProfile(field: keyof AdminProfile, value: string) {
+    setProfile((current) => ({ ...current, [field]: value }));
+    setMessage("");
+  }
+
+  function saveProfile() {
+    try {
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      setMessage("Profil tersimpan di browser ini.");
+    } catch {
+      setMessage(
+        "Profil tidak dapat disimpan. Periksa ruang penyimpanan browser.",
+      );
+    }
+  }
+
+  function resetLocalCredentials() {
+    localStorage.removeItem(LOCAL_ADMIN_KEY);
+    localStorage.removeItem(LOCAL_SESSION_KEY);
+    sessionStorage.removeItem(LOCAL_SESSION_KEY);
+    navigate("login");
+  }
+
   return (
     <div>
       <div className="mb-8 flex items-end justify-between">
@@ -1247,91 +1306,96 @@ function ProfilePage({
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
             Administrasi Sistem
           </p>
-
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Profil Admin & Pengaturan Akun
           </h1>
-
           <p className="mt-2 text-sm text-slate-500">
-            Kelola informasi identitas kurator dan keamanan akun.
+            Perubahan profil disimpan di browser ini.
           </p>
         </div>
-
         <div className="flex gap-3">
-          <button className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600">
+          <button
+            type="button"
+            onClick={() => {
+              setProfile(readProfile());
+              setMessage("");
+            }}
+            className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600"
+          >
             Batal
           </button>
-
-          <button className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800">
+          <button
+            type="button"
+            onClick={saveProfile}
+            className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+          >
             Simpan Perubahan
           </button>
         </div>
       </div>
 
-      {/* PROFILE HEADER */}
+      {message && (
+        <div
+          role="status"
+          className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+        >
+          {message}
+        </div>
+      )}
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-5">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-700 text-2xl font-bold text-white">
-            RA
-          </div>
-
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-700 text-2xl font-bold text-white">{`${profile.firstName[0] ?? "A"}${profile.lastName[0] ?? ""}`}</div>
           <div>
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-bold text-slate-900">
-                Raden Arya, S.Sn
+                {profile.firstName} {profile.lastName}
               </h2>
-
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Akun Terverifikasi
+                Admin
               </span>
             </div>
-
-            <p className="mt-2 font-medium text-emerald-700">
-              Super Admin & Kepala Kurator Pelestarian Seni Tari Panji
-            </p>
-
-            <p className="mt-2 text-sm text-slate-400">
-              r.arya@jelajahtopeng.id • Yogyakarta & Malang
-            </p>
+            <p className="mt-2 font-medium text-emerald-700">{profile.title}</p>
+            <p className="mt-2 text-sm text-slate-400">{profile.email}</p>
           </div>
         </div>
       </section>
 
-      {/* PROFILE GRID */}
       <div className="mt-6 grid grid-cols-2 gap-6">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
               <User size={19} />
             </div>
-
             <div>
               <h2 className="font-bold text-slate-900">
                 Informasi Identitas & Jabatan
               </h2>
-
               <p className="text-xs text-slate-400">
-                Data akun administrator
+                Edit lalu pilih Simpan Perubahan
               </p>
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
-            <InputBox label="Nama Depan" value="Raden" />
-
+            <InputBox
+              label="Nama Depan"
+              value={profile.firstName}
+              onChange={(value) => updateProfile("firstName", value)}
+            />
             <InputBox
               label="Nama Belakang & Gelar"
-              value="Arya, S.Sn"
+              value={profile.lastName}
+              onChange={(value) => updateProfile("lastName", value)}
             />
-
             <InputBox
               label="Email Kedinasan"
-              value="raden.arya@jelajahtopeng.id"
+              value={profile.email}
+              onChange={(value) => updateProfile("email", value)}
             />
-
             <InputBox
               label="Nomor Telepon"
-              value="+62 812-3456-7890"
+              value={profile.phone}
+              onChange={(value) => updateProfile("phone", value)}
             />
           </div>
         </section>
@@ -1341,94 +1405,80 @@ function ProfilePage({
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <LockKeyhole size={19} />
             </div>
-
             <div>
               <h2 className="font-bold text-slate-900">
                 Keamanan & Kata Sandi
               </h2>
-
               <p className="text-xs text-slate-400">
-                Kelola keamanan akun
+                Akun demo lokal
               </p>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <InputBox
-              label="Kata Sandi Lama"
-              value="••••••••••"
-            />
-
-            <InputBox
-              label="Kata Sandi Baru"
-              value="••••••••••"
-            />
-
-            <button className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white hover:bg-emerald-800">
-              Perbarui Kata Sandi
-            </button>
-          </div>
+          <p className="mb-4 text-sm text-slate-600">
+            Reset akan menghapus kredensial lokal dan meminta kamu membuat kata sandi baru.
+          </p>
+          <button
+            type="button"
+            onClick={resetLocalCredentials}
+            className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+          >
+            Atur Ulang Kredensial Lokal
+          </button>
         </section>
       </div>
 
-      {/* SECURITY */}
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
             <ShieldCheck size={22} />
           </div>
-
           <div>
-            <h2 className="font-bold text-slate-900">
-              Keamanan Akun
-            </h2>
-
+            <h2 className="font-bold text-slate-900">Status Autentikasi</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Autentikasi dua faktor aktif dan sesi akun terlindungi.
+              "Login demo lokal aktif di browser ini. Tidak melindungi data di website publik."
             </p>
           </div>
-
-          <span className="ml-auto rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-            2FA Aktif
+          <span
+            className="ml-auto rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700"
+          >
+            Demo lokal
           </span>
         </div>
       </section>
 
       <button
-        onClick={() => navigate('login')}
+        type="button"
+        onClick={() => navigate("login")}
         className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
       >
         <LogOut size={17} />
         Keluar
       </button>
     </div>
-  )
+  );
 }
-
-// =============================================================
-// INPUT BOX
-// =============================================================
 
 function InputBox({
   label,
   value,
+  onChange,
 }: {
-  label: string
-  value: string
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <div>
       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
         {label}
       </label>
-
       <input
         value={value}
-        readOnly
-        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none"
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none focus:border-emerald-500 focus:bg-white"
       />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
