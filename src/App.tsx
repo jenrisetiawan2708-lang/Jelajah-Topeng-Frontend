@@ -954,75 +954,94 @@ type ContentProfile = {
 // existing page layout stays the same; only the meaning of its fields changes.
 const CONTENT_PROFILES: Record<GenericPageKind, ContentProfile> = {
   exploration: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Nama kampung / titik lokasi", "Sejarah, tokoh, atau tradisi", "Alamat / wilayah", "Tahun berdiri / waktu kunjungan", "Jumlah kunjungan"],
+    statuses: ["Aktif", "Perlu verifikasi", "Nonaktif"],
     records: [
-      { name: "Contoh data exploration", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Kampung Topeng Malang", description: "Sejarah topeng Malangan, tokoh perajin, tradisi, dan dokumentasi kampung.", location: "Kedungmonggo, Pakisaji, Malang", date: "1930", amount: "8420", status: "Aktif" },
+      { name: "Sanggar Cirebon Slangit", description: "Sejarah tari topeng Cirebon dan profil maestro setempat.", location: "Slangit, Cirebon", date: "2000", amount: "6280", status: "Aktif" },
+      { name: "Sentra Topeng Kayu Bobung", description: "Dokumentasi pembuatan topeng kayu dan tradisi kerajinan.", location: "Bobung, Gunungkidul", date: "1970", amount: "4760", status: "Aktif" },
     ],
   },
   panji: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Nama pemberhentian", "Clue / cerita yang ditemukan", "Lokasi pemberhentian", "Urutan pemberhentian", "Poin reward"],
+    statuses: ["Terkunci", "Belum dikunjungi", "Selesai"],
     records: [
-      { name: "Contoh data panji", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Makam Mbah Reni", description: "Temukan petunjuk tentang asal-usul topeng Panji di titik ini.", location: "Kampung Topeng Malang", date: "1", amount: "50", status: "Belum dikunjungi" },
+      { name: "Sanggar Topeng", description: "Kenali proses pembuatan topeng dan kumpulkan clue berikutnya.", location: "Kampung Topeng Malang", date: "2", amount: "75", status: "Terkunci" },
+      { name: "Galeri Topeng", description: "Amati koleksi topeng untuk membuka rangkaian petunjuk.", location: "Kampung Topeng Malang", date: "3", amount: "100", status: "Terkunci" },
+      { name: "Situs Ken Dedes", description: "Selesaikan cerita Panji dan buka reward perjalanan.", location: "Malang", date: "4", amount: "150", status: "Terkunci" },
     ],
   },
   materi: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Judul materi / sesi", "Ringkasan materi", "Nama maestro / sanggar", "Tanggal sesi / urutan materi", "Durasi (menit)"],
+    statuses: ["Aktif", "Draft", "Penuh"],
     records: [
-      { name: "Contoh data materi", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Pahat Karakter Wajah Panji", description: "Materi bertahap membentuk karakter topeng dari kayu.", location: "Ki Suwito · Kampung Topeng Malang", date: "Materi 1", amount: "90", status: "Aktif" },
+      { name: "Sungging Alami Pigmen Getah", description: "Video dan artikel teknik pewarnaan tradisional.", location: "Mbah Rasimun · Padepokan Klaten Panji", date: "Materi 2", amount: "60", status: "Aktif" },
+      { name: "Koreografi Tari Panji", description: "Panduan gerak tari dalam format video dan PDF.", location: "Dra. Endang · Sanggar Cirebon", date: "Materi 3", amount: "75", status: "Aktif" },
     ],
   },
   booking: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Nama sesi / pemesan", "Catatan konfirmasi", "Maestro / lokasi", "Tanggal dan jam sesi", "Jumlah peserta"],
+    statuses: ["Menunggu konfirmasi", "Dikonfirmasi", "Penuh", "Selesai"],
     records: [
-      { name: "Contoh data booking", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Pahat Karakter Wajah Panji", description: "Booking sesi langsung dengan maestro.", location: "Ki Suwito · Kampung Topeng Malang", date: "09:00 WIB", amount: "12 peserta", status: "Dikonfirmasi" },
+      { name: "Sungging Alami Pigmen Getah", description: "Menunggu konfirmasi jadwal dari maestro.", location: "Mbah Rasimun · Padepokan Klaten Panji", date: "13:00 WIB", amount: "8 peserta", status: "Menunggu konfirmasi" },
+      { name: "Koreografi Tari Panji", description: "Sesi pengenalan gerak tari topeng.", location: "Dra. Endang · Sanggar Cirebon", date: "15:30 WIB", amount: "10 peserta", status: "Dikonfirmasi" },
     ],
   },
   progres: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Nama misi / modul", "Target dan ringkasan capaian", "Nama peserta / kelompok", "Tanggal aktivitas", "Poin / capaian"],
+    statuses: ["Belum mulai", "Berlangsung", "Selesai"],
     records: [
-      { name: "Contoh data progres", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Selesaikan materi dasar topeng", description: "Tuntaskan seluruh materi bertahap untuk mendapat lencana.", location: "Pengunjung Jelajah Topeng", date: "Minggu ini", amount: "2 dari 4 materi", status: "Berlangsung" },
+      { name: "Kumpulkan clue Jejak Sang Panji", description: "Selesaikan pemberhentian untuk membuka reward.", location: "Peserta Jejak Panji", date: "Minggu ini", amount: "0 dari 5 clue", status: "Belum mulai" },
+      { name: "Ikuti sesi bersama maestro", description: "Riwayat keikutsertaan sesi budaya.", location: "Komunitas Tari Sekar", date: "Bulan ini", amount: "100 poin", status: "Selesai" },
     ],
   },
   ticketing: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Nama paket kunjungan", "Detail paket dan fasilitas", "Kampung / lokasi tujuan", "Tanggal kunjungan", "Harga per paket (Rp)"],
+    statuses: ["Tersedia", "Habis", "Draft"],
     records: [
-      { name: "Contoh data ticketing", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Tur Kampung Topeng", description: "Tur kampung, galeri topeng, dan pengenalan sejarah.", location: "Kampung Topeng Malang", date: "Pilih saat pesan", amount: "150000", status: "Tersedia" },
+      { name: "Workshop Pembuatan Topeng", description: "Kunjungan dan praktik bersama perajin lokal.", location: "Sentra Topeng Kayu Bobung", date: "Pilih saat pesan", amount: "250000", status: "Tersedia" },
+      { name: "Paket Jelajah Sanggar", description: "Kunjungan sanggar dan pertunjukan budaya.", location: "Sanggar Cirebon Slangit", date: "Pilih saat pesan", amount: "200000", status: "Tersedia" },
     ],
   },
   payment: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Kode / nama pemesan", "Rincian tiket dan pembayaran", "Paket / lokasi tujuan", "Tanggal transaksi", "Total pembayaran (Rp)"],
+    statuses: ["Menunggu pembayaran", "Terverifikasi", "Gagal"],
     records: [
-      { name: "Contoh data payment", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "TRX-2026-001 · SMA Taruna Nusantara", description: "Checkout Tur Kampung Topeng · 24 peserta.", location: "Kampung Topeng Malang", date: "5 Oktober 2026", amount: "3600000", status: "Terverifikasi" },
+      { name: "TRX-2026-002 · Dr. Helena Meyer", description: "Checkout Workshop Pembuatan Topeng · 2 peserta.", location: "Sentra Topeng Kayu Bobung", date: "5 Oktober 2026", amount: "500000", status: "Menunggu pembayaran" },
     ],
   },
   notification: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Judul notifikasi", "Isi pemberitahuan", "Penerima / fitur", "Jadwal kirim", "Jumlah penerima"],
+    statuses: ["Draft", "Terjadwal", "Terkirim"],
     records: [
-      { name: "Contoh data notification", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Pengingat jadwal maestro", description: "Sesi Pahat Karakter Wajah Panji dimulai pukul 09:00 WIB.", location: "Peserta booking", date: "Hari ini · 08:00 WIB", amount: "12 pengguna", status: "Terkirim" },
+      { name: "Booking berhasil dikonfirmasi", description: "Simpan detail jadwal dan tunjukkan konfirmasi saat hadir.", location: "Pemesan sesi maestro", date: "Saat status berubah", amount: "8 pengguna", status: "Terjadwal" },
+      { name: "Misi baru tersedia", description: "Jelajahi pemberhentian berikutnya untuk mengumpulkan clue.", location: "Peserta Jejak Sang Panji", date: "Belum dijadwalkan", amount: "Semua peserta", status: "Draft" },
     ],
   },
   faq: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Pertanyaan", "Jawaban / panduan", "Kategori bantuan", "Tanggal pembaruan", "Kata kunci"],
+    statuses: ["Terbit", "Draft", "Perlu diperbarui"],
     records: [
-      { name: "Contoh data faq", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Bagaimana cara memesan tiket kunjungan?", description: "Pilih paket, tentukan jumlah peserta dan tanggal, isi data pemesan, lalu lanjutkan checkout.", location: "Ticketing Online", date: "5 Oktober 2026", amount: "tiket, booking", status: "Terbit" },
+      { name: "Bagaimana cara booking sesi maestro?", description: "Pilih sesi yang tersedia di kalender, isi formulir konfirmasi, lalu cek riwayat booking.", location: "Belajar dengan Maestro", date: "5 Oktober 2026", amount: "maestro, jadwal", status: "Terbit" },
+      { name: "Di mana e-ticket dan QR code saya?", description: "E-ticket tersedia pada riwayat pembelian setelah pembayaran terverifikasi.", location: "Pembayaran", date: "5 Oktober 2026", amount: "e-ticket, QR", status: "Terbit" },
     ],
   },
   users: {
-    fields: ["Nama / judul", "Keterangan", "Lokasi / pihak terkait", "Tanggal", "Nilai / nominal"],
-    statuses: ["Aktif", "Menunggu Review", "Nonaktif"],
+    fields: ["Nama pengguna", "Informasi profil", "Email pengguna", "Tanggal bergabung", "Kontak"],
+    statuses: ["Aktif", "Perlu dilengkapi", "Nonaktif"],
     records: [
-      { name: "Contoh data users", description: "Contoh data Jelajah Topeng.", location: "Jelajah Topeng", date: "", amount: "", status: "Aktif" },
+      { name: "Raden Arya", description: "Profil pengunjung Jelajah Topeng.", location: "raden.arya@example.com", date: "5 Oktober 2026", amount: "+62 812-3456-7890", status: "Aktif" },
+      { name: "Komunitas Tari Sekar", description: "Profil kelompok untuk booking dan pembelian tiket.", location: "sekar@example.com", date: "5 Oktober 2026", amount: "-", status: "Perlu dilengkapi" },
     ],
-  }
+  },
 };
 
 function GenericPage({
