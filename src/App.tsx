@@ -312,36 +312,28 @@ function App() {
           {/* =================================================
               TOPBAR
           ================================================= */}
-
           <header className="sticky top-0 z-20 flex h-[78px] items-center border-b border-slate-200 bg-white px-8">
-            {/* BREADCRUMB */}
-            <button
-              onClick={() => navigate("dashboard")}
-              className="flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-700"
-            >
-              Jelajah Topeng
-            </button>
-
-            <ChevronRight size={17} className="mx-2 text-slate-300" />
-
-            <span className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-              {pageNames[page]}
-            </span>
-
-            {/* SEARCH */}
-            <div className="ml-8 flex h-10 w-[330px] items-center gap-2 rounded-xl bg-slate-50 px-3">
-              <Search size={17} className="text-slate-400" />
-
-              <input
-                type="text"
-                placeholder="Cari maestro, reservasi, data..."
-                value={globalQuery}
-                onChange={(event) => setGlobalQuery(event.target.value)}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-              />
+            {/* LEFT - NAMA APLIKASI */}
+            <div className="flex items-center">
+              <span className="text-sm font-semibold text-slate-700">
+                Jelajah Topeng
+              </span>
             </div>
 
+            {/* RIGHT SIDE */}
             <div className="ml-auto flex items-center gap-5">
+              {/* SEARCH */}
+              <div className="flex h-10 w-[330px] items-center gap-2 rounded-xl bg-slate-50 px-3">
+                <Search size={17} className="text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari maestro, reservasi, data..."
+                  value={globalQuery}
+                  onChange={(event) => setGlobalQuery(event.target.value)}
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                />
+              </div>
+
               {/* SYSTEM STATUS */}
               <div className="hidden items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-700 lg:flex">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -350,43 +342,65 @@ function App() {
 
               {/* NOTIFICATION */}
               <button
+                type="button"
                 onClick={() => navigate("notification")}
-                className="relative text-slate-500 transition hover:text-emerald-700"
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-emerald-700"
+                title="Notifikasi"
               >
                 <Bell size={20} />
-
-                <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
               </button>
 
               {/* SETTINGS */}
               <button
+                type="button"
                 onClick={() => navigate("profile")}
-                className="text-slate-500 transition hover:text-emerald-700"
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-emerald-700"
+                title="Pengaturan Profil"
               >
                 <Settings size={20} />
               </button>
 
               <div className="h-7 w-px bg-slate-200" />
 
-              {/* PROFILE */}
+              {/* LOGOUT - MENGGANTIKAN PROFIL RADEN ARYA */}
               <button
-                onClick={() => navigate("profile")}
-                className="flex items-center gap-3 text-left"
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem(LOCAL_ADMIN_KEY);
+                  localStorage.removeItem(LOCAL_SESSION_KEY);
+                  sessionStorage.removeItem(LOCAL_SESSION_KEY);
+                  navigate("login");
+                }}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+                title="Logout"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">
-                  RA
-                </div>
-
-                <div className="hidden md:block">
-                  <p className="text-xs font-bold text-slate-800">
-                    Raden Arya, S.Sn
-                  </p>
-
-                  <p className="text-[10px] text-slate-400">Super Admin</p>
-                </div>
+                <LogOut size={18} />
+                <span>Logout</span>
               </button>
             </div>
           </header>
+
+          {/* =================================================
+              BREADCRUMB - DI BAWAH NAVBAR
+          ================================================= */}
+          <div className="border-b border-slate-200 bg-white px-8 py-4">
+            <div className="flex items-center gap-2 text-sm">
+              <button
+                type="button"
+                onClick={() => navigate("dashboard")}
+                className="font-medium text-slate-500 transition hover:text-emerald-700"
+              >
+                Jelajah Topeng
+              </button>
+
+              <ChevronRight size={15} className="text-slate-300" />
+
+              <span className="font-semibold text-slate-800">
+                {pageNames[page]}
+              </span>
+            </div>
+          </div>
 
           {/* =================================================
               PAGE CONTENT
@@ -1122,10 +1136,26 @@ function GenericPage({
   const pageCount = Math.max(1, Math.ceil(matchingItems.length / pageSize));
   const firstStatus = profile.statuses[0];
   const secondStatus = profile.statuses[1] ?? profile.statuses[0];
-  const latestUpdate = items.reduce<string | undefined>((latest, item) =>
-    Date.parse(item.createdAt) > 0 && (!latest || item.createdAt > latest)
+  // createdAt diperbarui setiap kali data ditambah atau diedit.
+  // Data lama/seed memakai epoch (1970), jadi tidak dianggap sebagai pembaruan.
+  const latestUpdate = items.reduce<string | undefined>((latest, item) => {
+    const timestamp = Date.parse(item.createdAt);
+    if (timestamp <= 0) return latest;
+    return !latest || timestamp > Date.parse(latest)
       ? item.createdAt
-      : latest, undefined);
+      : latest;
+  }, undefined);
+
+  const formattedLatestUpdate = latestUpdate
+    ? new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(latestUpdate))
+    : null;
+
   const currentPage = Math.min(page, pageCount);
   const visibleItems = matchingItems.slice(
     (currentPage - 1) * pageSize,
@@ -1255,8 +1285,12 @@ function GenericPage({
         />
         <StatCard
           title="Pembaruan Terakhir"
-          value={latestUpdate ? new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short" }).format(new Date(latestUpdate)) : "Contoh"}
-          subtitle={latestUpdate ? "Disimpan di browser ini" : "Data awal dari IA"}
+          value={formattedLatestUpdate ?? "Belum diperbarui"}
+          subtitle={
+            latestUpdate
+              ? "Tanggal & waktu perubahan terakhir"
+              : "Belum ada data yang ditambah atau diedit"
+          }
           icon={TrendingUp}
         />
       </div>
