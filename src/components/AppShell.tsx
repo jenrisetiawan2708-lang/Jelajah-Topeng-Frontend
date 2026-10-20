@@ -1,6 +1,9 @@
+"use client";
+
 import { useState } from "react";
-import Login from "./components/Login";
-import { LOCAL_ADMIN_KEY, LOCAL_SESSION_KEY } from "./lib/localAuth";
+import type React from "react";
+import { signOutAction } from "@/app/actions/auth";
+import type { DashboardSummary } from "@/lib/dal";
 import {
   Bell,
   BookOpen,
@@ -15,6 +18,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   LogOut,
+  Menu,
   Pencil,
   Search,
   Settings,
@@ -26,12 +30,13 @@ import {
   UserCog,
   Users,
   WalletCards,
+  X,
+  type LucideIcon,
 } from "lucide-react";
 
-import logo from "./assets/logo-jelajah-topeng.png";
+import logo from "@/assets/logo-jelajah-topeng.png";
 
 type Page =
-  | "login"
   | "dashboard"
   | "exploration"
   | "panji"
@@ -45,36 +50,37 @@ type Page =
   | "users"
   | "profile";
 
-function App() {
+function App({
+  dashboardSummary,
+  userEmail,
+  userRole,
+}: {
+  dashboardSummary: DashboardSummary;
+  userEmail: string;
+  userRole: "admin" | "user";
+}) {
   const [globalQuery, setGlobalQuery] = useState("");
-  const [page, setPage] = useState<Page>(() => {
-    try {
-      return localStorage.getItem(LOCAL_SESSION_KEY) ||
-        sessionStorage.getItem(LOCAL_SESSION_KEY)
-        ? "dashboard"
-        : "login";
-    } catch {
-      return "login";
-    }
-  });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [page, setPage] = useState<Page>("dashboard");
 
   const navigate = (target: Page) => {
-    if (target === "login") {
-      localStorage.removeItem(LOCAL_SESSION_KEY);
-      sessionStorage.removeItem(LOCAL_SESSION_KEY);
-      setPage("login");
-      return;
-    }
-
+    setSidebarOpen(false);
     setPage(target);
   };
 
-  // =========================================================
-  // LOGIN
-  // =========================================================
-
-  if (page === "login") {
-    return <Login onLogin={() => setPage("dashboard")} />;
+  if (userRole !== "admin") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Login berhasil</p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">Akses admin diperlukan</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">Akun {userEmail} sudah terautentikasi, tetapi tidak memiliki peran admin. Data dashboard tidak dikirim ke akun ini.</p>
+          <form action={signOutAction} className="mt-6">
+            <button type="submit" className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">Keluar</button>
+          </form>
+        </section>
+      </main>
+    );
   }
 
   // =========================================================
@@ -151,7 +157,6 @@ function App() {
   ];
 
   const pageNames: Record<Page, string> = {
-    login: "Login",
     dashboard: "Dashboard",
     exploration: "Eksplorasi Kampung",
     panji: "Jejak Sang Panji",
@@ -173,12 +178,24 @@ function App() {
             SIDEBAR
         ===================================================== */}
 
-        <aside className="fixed left-0 top-0 z-30 flex h-screen w-[255px] flex-col border-r border-slate-200 bg-white">
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        <aside
+          className={`fixed left-0 top-0 z-40 flex h-screen w-[255px] flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
           {/* BRAND */}
-          <div className="flex h-[100px] items-center border-b border-slate-100 px-6">
+          <div className="flex h-[100px] items-center justify-between border-b border-slate-100 px-6">
             <div className="flex items-center gap-3">
               <img
-                src={logo}
+                src={logo.src}
                 alt="Logo Jelajah Topeng"
                 className="h-11 w-11 object-contain"
               />
@@ -197,6 +214,15 @@ function App() {
                 </p>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-50 lg:hidden"
+              aria-label="Tutup menu"
+            >
+              <X size={20} />
+            </button>
           </div>
 
           {/* MENU */}
@@ -308,40 +334,49 @@ function App() {
             MAIN AREA
         ===================================================== */}
 
-        <div className="ml-[255px] flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[255px]">
           {/* =================================================
               TOPBAR
           ================================================= */}
-
-          <header className="sticky top-0 z-20 flex h-[78px] items-center border-b border-slate-200 bg-white px-8">
-            {/* BREADCRUMB */}
+          <header className="sticky top-0 z-20 flex h-[64px] items-center gap-3 border-b border-slate-200 bg-white px-4 sm:px-6 lg:h-[78px] lg:px-8">
+            {/* LEFT - NAMA APLIKASI */}
             <button
-              onClick={() => navigate("dashboard")}
-              className="flex items-center gap-2 text-sm text-slate-500 hover:text-emerald-700"
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-50 lg:hidden"
+              aria-label="Buka menu"
             >
-              Jelajah Topeng
+              <Menu size={22} />
             </button>
 
-            <ChevronRight size={17} className="mx-2 text-slate-300" />
-
-            <span className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-              {pageNames[page]}
-            </span>
-
-            {/* SEARCH */}
-            <div className="ml-8 flex h-10 w-[330px] items-center gap-2 rounded-xl bg-slate-50 px-3">
-              <Search size={17} className="text-slate-400" />
-
-              <input
-                type="text"
-                placeholder="Cari maestro, reservasi, data..."
-                value={globalQuery}
-                onChange={(event) => setGlobalQuery(event.target.value)}
-                className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-              />
+            <div className="hidden min-w-0 items-center gap-2 sm:flex">
+              <button
+                type="button"
+                onClick={() => navigate("dashboard")}
+                className="shrink-0 text-sm font-semibold text-slate-600 transition hover:text-emerald-700"
+              >
+                Jelajah Topeng
+              </button>
+              <ChevronRight size={15} className="shrink-0 text-slate-300" />
+              <span className="truncate rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+                {pageNames[page]}
+              </span>
             </div>
 
-            <div className="ml-auto flex items-center gap-5">
+            {/* RIGHT SIDE */}
+            <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-5">
+              {/* SEARCH */}
+              <div className="flex h-10 w-32 min-w-0 items-center gap-2 rounded-xl bg-slate-50 px-3 sm:w-56 lg:w-[330px]">
+                <Search size={17} className="text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari maestro, reservasi, data..."
+                  value={globalQuery}
+                  onChange={(event) => setGlobalQuery(event.target.value)}
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                />
+              </div>
+
               {/* SYSTEM STATUS */}
               <div className="hidden items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-700 lg:flex">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -350,41 +385,38 @@ function App() {
 
               {/* NOTIFICATION */}
               <button
+                type="button"
                 onClick={() => navigate("notification")}
-                className="relative text-slate-500 transition hover:text-emerald-700"
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-emerald-700"
+                title="Notifikasi"
               >
                 <Bell size={20} />
-
-                <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
               </button>
 
               {/* SETTINGS */}
               <button
+                type="button"
                 onClick={() => navigate("profile")}
-                className="text-slate-500 transition hover:text-emerald-700"
+                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-emerald-700"
+                title="Pengaturan Profil"
               >
                 <Settings size={20} />
               </button>
 
-              <div className="h-7 w-px bg-slate-200" />
+              <div className="hidden h-7 w-px bg-slate-200 sm:block" />
 
-              {/* PROFILE */}
-              <button
-                onClick={() => navigate("profile")}
-                className="flex items-center gap-3 text-left"
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">
-                  RA
-                </div>
-
-                <div className="hidden md:block">
-                  <p className="text-xs font-bold text-slate-800">
-                    Raden Arya, S.Sn
-                  </p>
-
-                  <p className="text-[10px] text-slate-400">Super Admin</p>
-                </div>
-              </button>
+              {/* LOGOUT */}
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </form>
             </div>
           </header>
 
@@ -392,8 +424,10 @@ function App() {
               PAGE CONTENT
           ================================================= */}
 
-          <main className="flex-1 p-8">
-            {page === "dashboard" && <Dashboard navigate={navigate} query={globalQuery} />}
+          <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+            {page === "dashboard" && (
+              <Dashboard navigate={navigate} query={globalQuery} summary={dashboardSummary} />
+            )}
 
             {page === "exploration" && (
               <GenericPage
@@ -515,7 +549,7 @@ function App() {
               />
             )}
 
-            {page === "profile" && <ProfilePage navigate={navigate} />}
+            {page === "profile" && <ProfilePage userEmail={userEmail} userRole={userRole} />}
           </main>
         </div>
       </div>
@@ -527,37 +561,38 @@ function App() {
 // DASHBOARD
 // =============================================================
 
-function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query: string }) {
+function Dashboard({
+  navigate,
+  query,
+  summary,
+}: {
+  navigate: (page: Page) => void;
+  query: string;
+  summary: DashboardSummary;
+}) {
   const [period, setPeriod] = useState("30 Hari Terakhir");
   const [showPeriods, setShowPeriods] = useState(false);
-  const transactions = [
-    { id: "#TRX-2024-889", name: "SMA Taruna Nusantara", location: "Kampung Topeng Malang", amount: "Rp3.600.000", status: "Terverifikasi" },
-    { id: "#TRX-2024-890", name: "Dr. Helena Meyer", location: "Sanggar Cirebon Slangit", amount: "Rp850.000", status: "Menunggu" },
-    { id: "#TRX-2024-882", name: "Komunitas Tari Sekar", location: "Sentra Topeng Kayu Bobung", amount: "Rp2.450.000", status: "Terverifikasi" },
-    { id: "#TRX-2024-891", name: "Bpk. Bambang Sutrisno", location: "Padepokan Klaten Panji", amount: "Rp600.000", status: "Terverifikasi" },
-  ];
-  const visibleTransactions = transactions.filter((item) =>
+  const visibleTransactions = summary.transactions.filter((item) =>
     `${item.id} ${item.name} ${item.location} ${item.amount} ${item.status}`
-      .toLowerCase().includes(query.trim().toLowerCase()),
+      .toLowerCase()
+      .includes(query.trim().toLowerCase()),
   );
-  const masterclasses = [
-    { time: "09:00", title: "Pahat Karakter Wajah Panji", maestro: "Ki Suwito", place: "Kampung Topeng Malang" },
-    { time: "13:00", title: "Sungging Alami Pigmen Getah", maestro: "Mbah Rasimun", place: "Padepokan Klaten Panji" },
-    { time: "15:30", title: "Koreografi Tari Panji", maestro: "Dra. Endang", place: "Sanggar Cirebon" },
-  ].filter((item) =>
-    `${item.title} ${item.maestro} ${item.place}`.toLowerCase().includes(query.trim().toLowerCase()),
+  const masterclasses = summary.masterclasses.filter((item) =>
+    `${item.title} ${item.maestro} ${item.place}`
+      .toLowerCase()
+      .includes(query.trim().toLowerCase()),
   );
 
   return (
     <div>
       {/* HEADER */}
-      <div className="mb-8 flex items-end justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-sm font-medium text-emerald-700">
             Dashboard Kuratorial
           </p>
 
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Selamat Datang, Raden Arya!
           </h1>
 
@@ -566,7 +601,7 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <div className="relative">
             <button
               type="button"
@@ -609,10 +644,10 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Kunjungan"
-          value="24.580"
+          value={summary.visits.toLocaleString("id-ID")}
           subtitle="+14.2% dari bulan lalu"
           icon={Users}
           onClick={() => navigate("exploration")}
@@ -620,7 +655,7 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
 
         <StatCard
           title="Tiket Terverifikasi"
-          value="1.824"
+          value={summary.verifiedTickets.toLocaleString("id-ID")}
           subtitle="+8.5% dari bulan lalu"
           icon={Ticket}
           onClick={() => navigate("ticketing")}
@@ -628,7 +663,7 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
 
         <StatCard
           title="Sesi Maestro Aktif"
-          value="42"
+          value={summary.activeSessions.toLocaleString("id-ID")}
           subtitle="5 perlu konfirmasi"
           icon={CalendarDays}
           onClick={() => navigate("booking")}
@@ -636,7 +671,7 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
 
         <StatCard
           title="Pendapatan Budaya"
-          value="Rp148,6 Juta"
+          value={summary.revenue.toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })}
           subtitle="+18.4% dari bulan lalu"
           icon={WalletCards}
           onClick={() => navigate("payment")}
@@ -644,7 +679,7 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
       </div>
 
       {/* MAIN GRID */}
-      <div className="mt-6 grid grid-cols-[1.6fr_1fr] gap-6">
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_1fr]">
         {/* TRANSACTIONS */}
         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 p-6">
@@ -667,9 +702,19 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
           </div>
 
           <div className="divide-y divide-slate-100">
-            {visibleTransactions.length ? visibleTransactions.map((item) => (
-              <TransactionRow key={item.id} {...item} onClick={() => navigate("payment")} />
-            )) : <p className="p-6 text-sm text-slate-500">Tidak ada transaksi yang cocok dengan pencarian.</p>}
+            {visibleTransactions.length ? (
+              visibleTransactions.map((item) => (
+                <TransactionRow
+                  key={item.id}
+                  {...item}
+                  onClick={() => navigate("payment")}
+                />
+              ))
+            ) : (
+              <p className="p-6 text-sm text-slate-500">
+                Tidak ada transaksi yang cocok dengan pencarian.
+              </p>
+            )}
           </div>
         </section>
 
@@ -693,9 +738,19 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
           </div>
 
           <div className="space-y-4 p-6">
-            {masterclasses.length ? masterclasses.map((item) => (
-              <Masterclass key={item.time} {...item} onClick={() => navigate("booking")} />
-            )) : <p className="text-sm text-slate-500">Tidak ada jadwal yang cocok dengan pencarian.</p>}
+            {masterclasses.length ? (
+              masterclasses.map((item) => (
+                <Masterclass
+                  key={item.time}
+                  {...item}
+                  onClick={() => navigate("booking")}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">
+                Tidak ada jadwal yang cocok dengan pencarian.
+              </p>
+            )}
           </div>
         </section>
       </div>
@@ -721,7 +776,7 @@ function Dashboard({ navigate, query }: { navigate: (page: Page) => void; query:
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <FavoriteCard
             number="01"
             name="Kampung Topeng Malang"
@@ -769,7 +824,7 @@ function StatCard({
   title: string;
   value: string;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
   onClick?: () => void;
 }) {
   return (
@@ -821,7 +876,11 @@ function TransactionRow({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-slate-50">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-slate-50"
+    >
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
         <CreditCard size={18} />
       </div>
@@ -869,7 +928,11 @@ function Masterclass({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="flex w-full gap-4 rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full gap-4 rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50"
+    >
       <div className="flex w-14 flex-col items-center justify-center rounded-xl bg-emerald-50">
         <span className="text-xs font-bold text-emerald-700">{time}</span>
         <span className="mt-1 text-[9px] text-slate-400">WIB</span>
@@ -902,7 +965,11 @@ function FavoriteCard({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="w-full rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50"
+    >
       <div className="mb-4 flex items-center justify-between">
         <span className="text-xs font-bold text-slate-300">{number}</span>
 
@@ -1056,7 +1123,7 @@ function GenericPage({
   kind: GenericPageKind;
   title: string;
   description: string;
-  icon: any;
+  icon: LucideIcon;
   navigate: (page: Page) => void;
   query: string;
   onQueryChange: (value: string) => void;
@@ -1070,29 +1137,38 @@ function GenericPage({
       if (Array.isArray(parsed)) {
         return parsed.flatMap((item, index): DataRecord[] => {
           if (typeof item === "string") {
-            return [{
-              id: `legacy-${index}-${item}`,
-              name: item,
-              description: "Data kuratorial Jelajah Topeng",
-              location: "",
-              date: "",
-              amount: "",
-              status: "Aktif",
-              createdAt: new Date(0).toISOString(),
-            }];
+            return [
+              {
+                id: `legacy-${index}-${item}`,
+                name: item,
+                description: "Data kuratorial Jelajah Topeng",
+                location: "",
+                date: "",
+                amount: "",
+                status: "Aktif",
+                createdAt: new Date(0).toISOString(),
+              },
+            ];
           }
-          if (item && typeof item === "object" && "name" in item && typeof item.name === "string") {
+          if (
+            item &&
+            typeof item === "object" &&
+            "name" in item &&
+            typeof item.name === "string"
+          ) {
             const record = item as Partial<DataRecord>;
-            return [{
-              id: record.id ?? `saved-${index}-${record.name}`,
-              name: item.name,
-              description: record.description ?? "",
-              location: record.location ?? "",
-              date: record.date ?? "",
-              amount: record.amount ?? "",
-              status: record.status ?? "Aktif",
-              createdAt: record.createdAt ?? new Date(0).toISOString(),
-            }];
+            return [
+              {
+                id: record.id ?? `saved-${index}-${record.name}`,
+                name: item.name,
+                description: record.description ?? "",
+                location: record.location ?? "",
+                date: record.date ?? "",
+                amount: record.amount ?? "",
+                status: record.status ?? "Aktif",
+                createdAt: record.createdAt ?? new Date(0).toISOString(),
+              },
+            ];
           }
           return [];
         });
@@ -1115,17 +1191,37 @@ function GenericPage({
   const [message, setMessage] = useState("");
   const pageSize = 3;
   const matchingItems = items
-    .filter((item) => `${item.name} ${item.description} ${item.location} ${item.status}`.toLowerCase().includes(query.trim().toLowerCase()))
-    .sort((a, b) => sortAZ
-      ? a.name.localeCompare(b.name, "id")
-      : b.createdAt.localeCompare(a.createdAt));
+    .filter((item) =>
+      `${item.name} ${item.description} ${item.location} ${item.status}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
+    )
+    .sort((a, b) =>
+      sortAZ
+        ? a.name.localeCompare(b.name, "id")
+        : b.createdAt.localeCompare(a.createdAt),
+    );
   const pageCount = Math.max(1, Math.ceil(matchingItems.length / pageSize));
   const firstStatus = profile.statuses[0];
   const secondStatus = profile.statuses[1] ?? profile.statuses[0];
-  const latestUpdate = items.reduce<string | undefined>((latest, item) =>
-    Date.parse(item.createdAt) > 0 && (!latest || item.createdAt > latest)
-      ? item.createdAt
-      : latest, undefined);
+  // createdAt diperbarui setiap kali data ditambah atau diedit.
+  // Data lama/seed memakai epoch (1970), jadi tidak dianggap sebagai pembaruan.
+  const latestUpdate = items.reduce<string | undefined>((latest, item) => {
+    const timestamp = Date.parse(item.createdAt);
+    if (timestamp <= 0) return latest;
+    return !latest || timestamp > Date.parse(latest) ? item.createdAt : latest;
+  }, undefined);
+
+  const formattedLatestUpdate = latestUpdate
+    ? new Intl.DateTimeFormat("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(latestUpdate))
+    : null;
+
   const currentPage = Math.min(page, pageCount);
   const visibleItems = matchingItems.slice(
     (currentPage - 1) * pageSize,
@@ -1148,7 +1244,13 @@ function GenericPage({
     e.preventDefault();
     const name = draft.name.trim();
     if (!name) return;
-    if (items.some((item) => item.name.toLowerCase() === name.toLowerCase() && item.id !== selectedItem?.id)) {
+    if (
+      items.some(
+        (item) =>
+          item.name.toLowerCase() === name.toLowerCase() &&
+          item.id !== selectedItem?.id,
+      )
+    ) {
       setMessage("Data dengan nama tersebut sudah ada.");
       return;
     }
@@ -1159,10 +1261,16 @@ function GenericPage({
       description: draft.description.trim(),
       location: draft.location.trim(),
       amount: draft.amount.trim(),
-      id: selectedItem?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id:
+        selectedItem?.id ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       createdAt: now,
     };
-    saveItems(adding ? [...items, record] : items.map((item) => item.id === record.id ? record : item));
+    saveItems(
+      adding
+        ? [...items, record]
+        : items.map((item) => (item.id === record.id ? record : item)),
+    );
     setAdding(false);
     setEditing(false);
     setSelectedItem(null);
@@ -1193,7 +1301,7 @@ function GenericPage({
 
   return (
     <div>
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -1203,7 +1311,7 @@ function GenericPage({
               • Diperbarui hari ini
             </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             {title}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
@@ -1234,7 +1342,7 @@ function GenericPage({
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Data"
           value={String(items.length)}
@@ -1243,26 +1351,34 @@ function GenericPage({
         />
         <StatCard
           title={firstStatus}
-          value={String(items.filter((item) => item.status === firstStatus).length)}
+          value={String(
+            items.filter((item) => item.status === firstStatus).length,
+          )}
           subtitle={`Data berstatus ${firstStatus.toLowerCase()}`}
           icon={ShieldCheck}
         />
         <StatCard
           title={secondStatus}
-          value={String(items.filter((item) => item.status === secondStatus).length)}
+          value={String(
+            items.filter((item) => item.status === secondStatus).length,
+          )}
           subtitle={`Data berstatus ${secondStatus.toLowerCase()}`}
           icon={Eye}
         />
         <StatCard
           title="Pembaruan Terakhir"
-          value={latestUpdate ? new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short" }).format(new Date(latestUpdate)) : "Contoh"}
-          subtitle={latestUpdate ? "Disimpan di browser ini" : "Data awal dari IA"}
+          value={formattedLatestUpdate ?? "Belum diperbarui"}
+          subtitle={
+            latestUpdate
+              ? "Tanggal & waktu perubahan terakhir"
+              : "Belum ada data yang ditambah atau diedit"
+          }
           icon={TrendingUp}
         />
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center gap-3 border-b border-slate-100 p-5">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 p-4 sm:p-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
             <Icon size={19} />
           </div>
@@ -1272,8 +1388,8 @@ function GenericPage({
               Data tersimpan di browser ini.
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="flex h-10 w-[280px] items-center gap-2 rounded-xl bg-slate-50 px-3">
+          <div className="flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto">
+            <div className="flex h-10 w-full items-center gap-2 rounded-xl bg-slate-50 px-3 sm:w-[280px]">
               <Search size={16} className="text-slate-400" />
               <input
                 value={query}
@@ -1302,22 +1418,47 @@ function GenericPage({
         <div className="divide-y divide-slate-100">
           {visibleItems.length ? (
             visibleItems.map((item, index) => (
-              <div key={item.id} className="flex items-center gap-4 px-6 py-5">
+              <div key={item.id} className="flex flex-wrap items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-500">
                   {String((currentPage - 1) * pageSize + index + 1).padStart(
                     2,
                     "0",
                   )}
                 </div>
-                <div className="flex-1">
+                <div className="min-w-[160px] flex-1">
                   <h3 className="text-sm font-semibold text-slate-800">
                     {item.name}
                   </h3>
                   <p className="mt-1 text-xs text-slate-400">
-                    {[item.location, item.description].filter(Boolean).join(" · ") || "Data kuratorial Jelajah Topeng"}
+                    {[item.location, item.description]
+                      .filter(Boolean)
+                      .join(" · ") || "Data kuratorial Jelajah Topeng"}
                   </p>
                 </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-medium ${["Aktif", "Selesai", "Dikonfirmasi", "Terverifikasi", "Tersedia", "Terbit", "Terkirim"].includes(item.status) ? "bg-emerald-50 text-emerald-700" : ["Menunggu Review", "Menunggu konfirmasi", "Draft", "Berlangsung", "Perlu verifikasi", "Perlu dilengkapi"].includes(item.status) ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    [
+                      "Aktif",
+                      "Selesai",
+                      "Dikonfirmasi",
+                      "Terverifikasi",
+                      "Tersedia",
+                      "Terbit",
+                      "Terkirim",
+                    ].includes(item.status)
+                      ? "bg-emerald-50 text-emerald-700"
+                      : [
+                            "Menunggu Review",
+                            "Menunggu konfirmasi",
+                            "Draft",
+                            "Berlangsung",
+                            "Perlu verifikasi",
+                            "Perlu dilengkapi",
+                          ].includes(item.status)
+                        ? "bg-amber-50 text-amber-700"
+                        : "bg-slate-100 text-slate-600"
+                  }`}
+                >
                   {item.status}
                 </span>
                 <button
@@ -1345,7 +1486,7 @@ function GenericPage({
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
+        <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-xs text-slate-400">
             Menampilkan{" "}
             <b className="text-slate-700">
@@ -1354,7 +1495,7 @@ function GenericPage({
             </b>{" "}
             dari <b className="text-slate-700">{matchingItems.length}</b> data
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {Array.from({ length: pageCount }, (_, index) => index + 1).map(
               (pageNumber) => (
                 <button
@@ -1412,7 +1553,11 @@ function GenericPage({
               id="data-dialog-title"
               className="text-lg font-bold text-slate-900"
             >
-              {adding ? "Tambah Data Baru" : editing ? "Edit Data" : "Detail Data"}
+              {adding
+                ? "Tambah Data Baru"
+                : editing
+                  ? "Edit Data"
+                  : "Detail Data"}
             </h2>
             {adding || editing ? (
               <form onSubmit={handleSave} className="mt-4 space-y-3">
@@ -1434,7 +1579,9 @@ function GenericPage({
                   {profile.fields[1]}
                   <textarea
                     value={draft.description}
-                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, description: e.target.value })
+                    }
                     rows={3}
                     className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
                   />
@@ -1443,7 +1590,9 @@ function GenericPage({
                   {profile.fields[2]}
                   <input
                     value={draft.location}
-                    onChange={(e) => setDraft({ ...draft, location: e.target.value })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, location: e.target.value })
+                    }
                     className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
                   />
                 </label>
@@ -1453,7 +1602,9 @@ function GenericPage({
                     <input
                       type="text"
                       value={draft.date}
-                      onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+                      onChange={(e) =>
+                        setDraft({ ...draft, date: e.target.value })
+                      }
                       placeholder={profile.fields[3]}
                       className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
                     />
@@ -1462,7 +1613,9 @@ function GenericPage({
                     {profile.fields[4]}
                     <input
                       value={draft.amount}
-                      onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
+                      onChange={(e) =>
+                        setDraft({ ...draft, amount: e.target.value })
+                      }
                       placeholder={profile.fields[4]}
                       className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
                     />
@@ -1472,7 +1625,9 @@ function GenericPage({
                   Status
                   <select
                     value={draft.status}
-                    onChange={(e) => setDraft({ ...draft, status: e.target.value })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, status: e.target.value })
+                    }
                     className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-emerald-600"
                   >
                     {profile.statuses.map((status) => (
@@ -1483,7 +1638,11 @@ function GenericPage({
                 <div className="mt-6 flex justify-end gap-3">
                   <button
                     type="button"
-                    onClick={() => { setAdding(false); setEditing(false); setSelectedItem(null); }}
+                    onClick={() => {
+                      setAdding(false);
+                      setEditing(false);
+                      setSelectedItem(null);
+                    }}
                     className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
                   >
                     Batal
@@ -1500,11 +1659,52 @@ function GenericPage({
             ) : (
               <>
                 <dl className="mt-5 space-y-3 text-sm">
-                  <div><dt className="text-xs text-slate-400">{profile.fields[0]}</dt><dd className="font-semibold text-slate-800">{selectedItem?.name}</dd></div>
-                  <div><dt className="text-xs text-slate-400">{profile.fields[1]}</dt><dd className="text-slate-700">{selectedItem?.description || "—"}</dd></div>
-                  <div><dt className="text-xs text-slate-400">{profile.fields[2]}</dt><dd className="text-slate-700">{selectedItem?.location || "—"}</dd></div>
-                  <div className="grid grid-cols-2 gap-3"><div><dt className="text-xs text-slate-400">{profile.fields[3]}</dt><dd className="text-slate-700">{selectedItem?.date || "—"}</dd></div><div><dt className="text-xs text-slate-400">{profile.fields[4]}</dt><dd className="text-slate-700">{selectedItem?.amount || "—"}</dd></div></div>
-                  <div><dt className="text-xs text-slate-400">Status</dt><dd className="text-slate-700">{selectedItem?.status}</dd></div>
+                  <div>
+                    <dt className="text-xs text-slate-400">
+                      {profile.fields[0]}
+                    </dt>
+                    <dd className="font-semibold text-slate-800">
+                      {selectedItem?.name}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-400">
+                      {profile.fields[1]}
+                    </dt>
+                    <dd className="text-slate-700">
+                      {selectedItem?.description || "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-400">
+                      {profile.fields[2]}
+                    </dt>
+                    <dd className="text-slate-700">
+                      {selectedItem?.location || "—"}
+                    </dd>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <dt className="text-xs text-slate-400">
+                        {profile.fields[3]}
+                      </dt>
+                      <dd className="text-slate-700">
+                        {selectedItem?.date || "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-400">
+                        {profile.fields[4]}
+                      </dt>
+                      <dd className="text-slate-700">
+                        {selectedItem?.amount || "—"}
+                      </dd>
+                    </div>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-slate-400">Status</dt>
+                    <dd className="text-slate-700">{selectedItem?.status}</dd>
+                  </div>
                 </dl>
                 <div className="mt-6 flex justify-between">
                   <button
@@ -1519,12 +1719,16 @@ function GenericPage({
                       type="button"
                       onClick={() => setSelectedItem(null)}
                       className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
-                    >Tutup</button>
+                    >
+                      Tutup
+                    </button>
                     <button
                       type="button"
                       onClick={() => selectedItem && openEdit(selectedItem)}
                       className="flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white"
-                    ><Pencil size={14} /> Edit</button>
+                    >
+                      <Pencil size={14} /> Edit
+                    </button>
                   </div>
                 </div>
               </>
@@ -1568,7 +1772,7 @@ function readProfile(): AdminProfile {
   }
 }
 
-function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
+function ProfilePage({ userEmail, userRole }: { userEmail: string; userRole: "admin" | "user" }) {
   const [profile, setProfile] = useState<AdminProfile>(readProfile);
   const [message, setMessage] = useState("");
 
@@ -1588,25 +1792,18 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
     }
   }
 
-  function resetLocalCredentials() {
-    localStorage.removeItem(LOCAL_ADMIN_KEY);
-    localStorage.removeItem(LOCAL_SESSION_KEY);
-    sessionStorage.removeItem(LOCAL_SESSION_KEY);
-    navigate("login");
-  }
-
   return (
     <div>
-      <div className="mb-8 flex items-end justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
             Administrasi Sistem
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Profil Admin & Pengaturan Akun
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Perubahan profil disimpan di browser ini.
+              Profil tampilan disimpan di browser ini. Peran akun berasal dari sesi server.
           </p>
         </div>
         <div className="flex gap-3">
@@ -1640,7 +1837,7 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
       )}
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-5">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-5">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-700 text-2xl font-bold text-white">{`${profile.firstName[0] ?? "A"}${profile.lastName[0] ?? ""}`}</div>
           <div>
             <div className="flex items-center gap-3">
@@ -1648,16 +1845,16 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
                 {profile.firstName} {profile.lastName}
               </h2>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Admin
+                {userRole === "admin" ? "Admin" : "Pengguna"}
               </span>
             </div>
             <p className="mt-2 font-medium text-emerald-700">{profile.title}</p>
-            <p className="mt-2 text-sm text-slate-400">{profile.email}</p>
+            <p className="mt-2 text-sm text-slate-400">{userEmail || profile.email}</p>
           </div>
         </div>
       </section>
 
-      <div className="mt-6 grid grid-cols-2 gap-6">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
@@ -1672,7 +1869,7 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <InputBox
               label="Nama Depan"
               value={profile.firstName}
@@ -1705,51 +1902,38 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
               <h2 className="font-bold text-slate-900">
                 Keamanan & Kata Sandi
               </h2>
-              <p className="text-xs text-slate-400">
-                Akun demo lokal
-              </p>
+              <p className="text-xs text-slate-400">Sesi dikelola Auth.js</p>
             </div>
           </div>
           <p className="mb-4 text-sm text-slate-600">
-            Reset akan menghapus kredensial lokal dan meminta kamu membuat kata sandi baru.
+            Autentikasi email dan Google membuat cookie sesi di server. Kredensial tidak disimpan di localStorage.
           </p>
-          <button
-            type="button"
-            onClick={resetLocalCredentials}
-            className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-          >
-            Atur Ulang Kredensial Lokal
-          </button>
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Sesi server aktif</span>
         </section>
       </div>
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
             <ShieldCheck size={22} />
           </div>
           <div>
             <h2 className="font-bold text-slate-900">Status Autentikasi</h2>
             <p className="mt-1 text-sm text-slate-400">
-              "Login demo lokal aktif di browser ini. Tidak melindungi data di website publik."
+              Dashboard memverifikasi sesi pada server; data ringkasan dikirim sebagai DTO terbatas melalui DAL.
             </p>
           </div>
-          <span
-            className="ml-auto rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700"
-          >
-            Demo lokal
+          <span className="ml-auto rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+            Auth.js · {userRole}
           </span>
         </div>
       </section>
 
-      <button
-        type="button"
-        onClick={() => navigate("login")}
-        className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
-      >
-        <LogOut size={17} />
-        Keluar
-      </button>
+      <form action={signOutAction}>
+        <button type="submit" className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50">
+          <LogOut size={17} />Keluar
+        </button>
+      </form>
     </div>
   );
 }
