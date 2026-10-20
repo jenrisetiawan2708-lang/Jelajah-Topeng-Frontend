@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import type React from "react";
-import { signOutAction } from "@/app/actions/auth";
-import type { DashboardSummary } from "@/lib/dal";
+import Login from "./Login";
+import { LOCAL_ADMIN_KEY, LOCAL_SESSION_KEY } from "@/lib/localAuth";
 import {
   Bell,
   BookOpen,
@@ -37,6 +37,7 @@ import {
 import logo from "@/assets/logo-jelajah-topeng.png";
 
 type Page =
+  | "login"
   | "dashboard"
   | "exploration"
   | "panji"
@@ -50,37 +51,38 @@ type Page =
   | "users"
   | "profile";
 
-function App({
-  dashboardSummary,
-  userEmail,
-  userRole,
-}: {
-  dashboardSummary: DashboardSummary;
-  userEmail: string;
-  userRole: "admin" | "user";
-}) {
+function App() {
   const [globalQuery, setGlobalQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [page, setPage] = useState<Page>("dashboard");
+  const [page, setPage] = useState<Page>(() => {
+    try {
+      return localStorage.getItem(LOCAL_SESSION_KEY) ||
+        sessionStorage.getItem(LOCAL_SESSION_KEY)
+        ? "dashboard"
+        : "login";
+    } catch {
+      return "login";
+    }
+  });
 
   const navigate = (target: Page) => {
     setSidebarOpen(false);
+    if (target === "login") {
+      localStorage.removeItem(LOCAL_SESSION_KEY);
+      sessionStorage.removeItem(LOCAL_SESSION_KEY);
+      setPage("login");
+      return;
+    }
+
     setPage(target);
   };
 
-  if (userRole !== "admin") {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-        <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Login berhasil</p>
-          <h1 className="mt-2 text-2xl font-bold text-slate-900">Akses admin diperlukan</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">Akun {userEmail} sudah terautentikasi, tetapi tidak memiliki peran admin. Data dashboard tidak dikirim ke akun ini.</p>
-          <form action={signOutAction} className="mt-6">
-            <button type="submit" className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">Keluar</button>
-          </form>
-        </section>
-      </main>
-    );
+  // =========================================================
+  // LOGIN
+  // =========================================================
+
+  if (page === "login") {
+    return <Login onLogin={() => setPage("dashboard")} />;
   }
 
   // =========================================================
@@ -157,6 +159,7 @@ function App({
   ];
 
   const pageNames: Record<Page, string> = {
+    login: "Login",
     dashboard: "Dashboard",
     exploration: "Eksplorasi Kampung",
     panji: "Jejak Sang Panji",
@@ -349,17 +352,9 @@ function App({
               <Menu size={22} />
             </button>
 
-            <div className="hidden min-w-0 items-center gap-2 sm:flex">
-              <button
-                type="button"
-                onClick={() => navigate("dashboard")}
-                className="shrink-0 text-sm font-semibold text-slate-600 transition hover:text-emerald-700"
-              >
+            <div className="hidden items-center sm:flex">
+              <span className="text-sm font-semibold text-slate-700">
                 Jelajah Topeng
-              </button>
-              <ChevronRight size={15} className="shrink-0 text-slate-300" />
-              <span className="truncate rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
-                {pageNames[page]}
               </span>
             </div>
 
@@ -407,18 +402,43 @@ function App({
               <div className="hidden h-7 w-px bg-slate-200 sm:block" />
 
               {/* LOGOUT */}
-              <form action={signOutAction}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-                  title="Logout"
-                >
-                  <LogOut size={18} />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </form>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem(LOCAL_ADMIN_KEY);
+                  localStorage.removeItem(LOCAL_SESSION_KEY);
+                  sessionStorage.removeItem(LOCAL_SESSION_KEY);
+                  navigate("login");
+                }}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+                title="Logout"
+              >
+                <LogOut size={18} />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
             </div>
           </header>
+
+          {/* =================================================
+              BREADCRUMB - DI BAWAH NAVBAR
+          ================================================= */}
+          <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
+            <div className="flex items-center gap-2 text-sm">
+              <button
+                type="button"
+                onClick={() => navigate("dashboard")}
+                className="font-medium text-slate-500 transition hover:text-emerald-700"
+              >
+                Jelajah Topeng
+              </button>
+
+              <ChevronRight size={15} className="text-slate-300" />
+
+              <span className="font-semibold text-slate-800">
+                {pageNames[page]}
+              </span>
+            </div>
+          </div>
 
           {/* =================================================
               PAGE CONTENT
@@ -426,7 +446,7 @@ function App({
 
           <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
             {page === "dashboard" && (
-              <Dashboard navigate={navigate} query={globalQuery} summary={dashboardSummary} />
+              <Dashboard navigate={navigate} query={globalQuery} />
             )}
 
             {page === "exploration" && (
@@ -549,7 +569,7 @@ function App({
               />
             )}
 
-            {page === "profile" && <ProfilePage userEmail={userEmail} userRole={userRole} />}
+            {page === "profile" && <ProfilePage navigate={navigate} />}
           </main>
         </div>
       </div>
@@ -564,20 +584,28 @@ function App({
 function Dashboard({
   navigate,
   query,
-  summary,
 }: {
   navigate: (page: Page) => void;
   query: string;
-  summary: DashboardSummary;
 }) {
   const [period, setPeriod] = useState("30 Hari Terakhir");
   const [showPeriods, setShowPeriods] = useState(false);
-  const visibleTransactions = summary.transactions.filter((item) =>
+  const transactions = [
+    { id: "#TRX-2024-889", name: "SMA Taruna Nusantara", location: "Kampung Topeng Malang", amount: "Rp3.600.000", status: "Terverifikasi" },
+    { id: "#TRX-2024-890", name: "Dr. Helena Meyer", location: "Sanggar Cirebon Slangit", amount: "Rp850.000", status: "Menunggu" },
+    { id: "#TRX-2024-882", name: "Komunitas Tari Sekar", location: "Sentra Topeng Kayu Bobung", amount: "Rp2.450.000", status: "Terverifikasi" },
+    { id: "#TRX-2024-891", name: "Bpk. Bambang Sutrisno", location: "Padepokan Klaten Panji", amount: "Rp600.000", status: "Terverifikasi" },
+  ];
+  const visibleTransactions = transactions.filter((item) =>
     `${item.id} ${item.name} ${item.location} ${item.amount} ${item.status}`
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
   );
-  const masterclasses = summary.masterclasses.filter((item) =>
+  const masterclasses = [
+    { time: "09:00", title: "Pahat Karakter Wajah Panji", maestro: "Ki Suwito", place: "Kampung Topeng Malang" },
+    { time: "13:00", title: "Sungging Alami Pigmen Getah", maestro: "Mbah Rasimun", place: "Padepokan Klaten Panji" },
+    { time: "15:30", title: "Koreografi Tari Panji", maestro: "Dra. Endang", place: "Sanggar Cirebon" },
+  ].filter((item) =>
     `${item.title} ${item.maestro} ${item.place}`
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
@@ -647,7 +675,7 @@ function Dashboard({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Kunjungan"
-          value={summary.visits.toLocaleString("id-ID")}
+          value="24.580"
           subtitle="+14.2% dari bulan lalu"
           icon={Users}
           onClick={() => navigate("exploration")}
@@ -655,7 +683,7 @@ function Dashboard({
 
         <StatCard
           title="Tiket Terverifikasi"
-          value={summary.verifiedTickets.toLocaleString("id-ID")}
+          value="1.824"
           subtitle="+8.5% dari bulan lalu"
           icon={Ticket}
           onClick={() => navigate("ticketing")}
@@ -663,7 +691,7 @@ function Dashboard({
 
         <StatCard
           title="Sesi Maestro Aktif"
-          value={summary.activeSessions.toLocaleString("id-ID")}
+          value="42"
           subtitle="5 perlu konfirmasi"
           icon={CalendarDays}
           onClick={() => navigate("booking")}
@@ -671,7 +699,7 @@ function Dashboard({
 
         <StatCard
           title="Pendapatan Budaya"
-          value={summary.revenue.toLocaleString("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })}
+          value="Rp148,6 Juta"
           subtitle="+18.4% dari bulan lalu"
           icon={WalletCards}
           onClick={() => navigate("payment")}
@@ -1772,7 +1800,7 @@ function readProfile(): AdminProfile {
   }
 }
 
-function ProfilePage({ userEmail, userRole }: { userEmail: string; userRole: "admin" | "user" }) {
+function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
   const [profile, setProfile] = useState<AdminProfile>(readProfile);
   const [message, setMessage] = useState("");
 
@@ -1792,6 +1820,13 @@ function ProfilePage({ userEmail, userRole }: { userEmail: string; userRole: "ad
     }
   }
 
+  function resetLocalCredentials() {
+    localStorage.removeItem(LOCAL_ADMIN_KEY);
+    localStorage.removeItem(LOCAL_SESSION_KEY);
+    sessionStorage.removeItem(LOCAL_SESSION_KEY);
+    navigate("login");
+  }
+
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
@@ -1803,7 +1838,7 @@ function ProfilePage({ userEmail, userRole }: { userEmail: string; userRole: "ad
             Profil Admin & Pengaturan Akun
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-              Profil tampilan disimpan di browser ini. Peran akun berasal dari sesi server.
+            Perubahan profil disimpan di browser ini.
           </p>
         </div>
         <div className="flex gap-3">
@@ -1845,11 +1880,11 @@ function ProfilePage({ userEmail, userRole }: { userEmail: string; userRole: "ad
                 {profile.firstName} {profile.lastName}
               </h2>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                {userRole === "admin" ? "Admin" : "Pengguna"}
+                Admin
               </span>
             </div>
             <p className="mt-2 font-medium text-emerald-700">{profile.title}</p>
-            <p className="mt-2 text-sm text-slate-400">{userEmail || profile.email}</p>
+            <p className="mt-2 text-sm text-slate-400">{profile.email}</p>
           </div>
         </div>
       </section>
@@ -1902,13 +1937,20 @@ function ProfilePage({ userEmail, userRole }: { userEmail: string; userRole: "ad
               <h2 className="font-bold text-slate-900">
                 Keamanan & Kata Sandi
               </h2>
-              <p className="text-xs text-slate-400">Sesi dikelola Auth.js</p>
+              <p className="text-xs text-slate-400">Akun demo lokal</p>
             </div>
           </div>
           <p className="mb-4 text-sm text-slate-600">
-            Autentikasi email dan Google membuat cookie sesi di server. Kredensial tidak disimpan di localStorage.
+            Reset akan menghapus kredensial lokal dan meminta kamu membuat kata
+            sandi baru.
           </p>
-          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Sesi server aktif</span>
+          <button
+            type="button"
+            onClick={resetLocalCredentials}
+            className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+          >
+            Atur Ulang Kredensial Lokal
+          </button>
         </section>
       </div>
 
@@ -1920,20 +1962,24 @@ function ProfilePage({ userEmail, userRole }: { userEmail: string; userRole: "ad
           <div>
             <h2 className="font-bold text-slate-900">Status Autentikasi</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Dashboard memverifikasi sesi pada server; data ringkasan dikirim sebagai DTO terbatas melalui DAL.
+              Login demo lokal aktif di browser ini. Tidak melindungi data di
+              website publik.
             </p>
           </div>
           <span className="ml-auto rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-            Auth.js · {userRole}
+            Demo lokal
           </span>
         </div>
       </section>
 
-      <form action={signOutAction}>
-        <button type="submit" className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50">
-          <LogOut size={17} />Keluar
-        </button>
-      </form>
+      <button
+        type="button"
+        onClick={() => navigate("login")}
+        className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+      >
+        <LogOut size={17} />
+        Keluar
+      </button>
     </div>
   );
 }
