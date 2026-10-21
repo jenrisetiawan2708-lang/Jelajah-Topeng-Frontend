@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import type React from "react";
-import Login from "./Login";
-import { LOCAL_ADMIN_KEY, LOCAL_SESSION_KEY } from "@/lib/localAuth";
+import { signOutAction } from "@/app/actions/auth";
+import type { DashboardSummary } from "@/lib/dal";
 import {
   Bell,
   BookOpen,
@@ -35,9 +35,9 @@ import {
 } from "lucide-react";
 
 import logo from "@/assets/logo-jelajah-topeng.png";
+import AdminActionButton from "@/components/AdminActionButton";
 
 type Page =
-  | "login"
   | "dashboard"
   | "exploration"
   | "panji"
@@ -51,38 +51,49 @@ type Page =
   | "users"
   | "profile";
 
-function App() {
+function App({
+  dashboardSummary,
+  userEmail,
+  userRole,
+}: {
+  dashboardSummary: DashboardSummary;
+  userEmail: string;
+  userRole: "admin" | "user";
+}) {
   const [globalQuery, setGlobalQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [page, setPage] = useState<Page>(() => {
-    try {
-      return localStorage.getItem(LOCAL_SESSION_KEY) ||
-        sessionStorage.getItem(LOCAL_SESSION_KEY)
-        ? "dashboard"
-        : "login";
-    } catch {
-      return "login";
-    }
-  });
+  const [page, setPage] = useState<Page>("dashboard");
 
   const navigate = (target: Page) => {
     setSidebarOpen(false);
-    if (target === "login") {
-      localStorage.removeItem(LOCAL_SESSION_KEY);
-      sessionStorage.removeItem(LOCAL_SESSION_KEY);
-      setPage("login");
-      return;
-    }
-
     setPage(target);
   };
 
-  // =========================================================
-  // LOGIN
-  // =========================================================
-
-  if (page === "login") {
-    return <Login onLogin={() => setPage("dashboard")} />;
+  if (userRole !== "admin") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+            Login berhasil
+          </p>
+          <h1 className="mt-2 text-2xl font-bold text-slate-900">
+            Akses admin diperlukan
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Akun {userEmail} sudah terautentikasi, tetapi tidak memiliki peran
+            admin. Data dashboard tidak dikirim ke akun ini.
+          </p>
+          <form action={signOutAction} className="mt-6">
+            <button
+              type="submit"
+              className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
+            >
+              Keluar
+            </button>
+          </form>
+        </section>
+      </main>
+    );
   }
 
   // =========================================================
@@ -159,7 +170,6 @@ function App() {
   ];
 
   const pageNames: Record<Page, string> = {
-    login: "Login",
     dashboard: "Dashboard",
     exploration: "Eksplorasi Kampung",
     panji: "Jejak Sang Panji",
@@ -323,7 +333,7 @@ function App() {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-800">
-                Raden Arya, S.Sn
+                Admin Jelajah Topeng
               </p>
 
               <p className="text-[11px] text-slate-400">Super Admin Panji</p>
@@ -352,9 +362,17 @@ function App() {
               <Menu size={22} />
             </button>
 
-            <div className="hidden items-center sm:flex">
-              <span className="text-sm font-semibold text-slate-700">
+            <div className="hidden min-w-0 items-center gap-2 sm:flex">
+              <button
+                type="button"
+                onClick={() => navigate("dashboard")}
+                className="shrink-0 text-sm font-semibold text-slate-600 transition hover:text-emerald-700"
+              >
                 Jelajah Topeng
+              </button>
+              <ChevronRight size={15} className="shrink-0 text-slate-300" />
+              <span className="truncate rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">
+                {pageNames[page]}
               </span>
             </div>
 
@@ -402,43 +420,18 @@ function App() {
               <div className="hidden h-7 w-px bg-slate-200 sm:block" />
 
               {/* LOGOUT */}
-              <button
-                type="button"
-                onClick={() => {
-                  localStorage.removeItem(LOCAL_ADMIN_KEY);
-                  localStorage.removeItem(LOCAL_SESSION_KEY);
-                  sessionStorage.removeItem(LOCAL_SESSION_KEY);
-                  navigate("login");
-                }}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-                title="Logout"
-              >
-                <LogOut size={18} />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </form>
             </div>
           </header>
-
-          {/* =================================================
-              BREADCRUMB - DI BAWAH NAVBAR
-          ================================================= */}
-          <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
-            <div className="flex items-center gap-2 text-sm">
-              <button
-                type="button"
-                onClick={() => navigate("dashboard")}
-                className="font-medium text-slate-500 transition hover:text-emerald-700"
-              >
-                Jelajah Topeng
-              </button>
-
-              <ChevronRight size={15} className="text-slate-300" />
-
-              <span className="font-semibold text-slate-800">
-                {pageNames[page]}
-              </span>
-            </div>
-          </div>
 
           {/* =================================================
               PAGE CONTENT
@@ -446,7 +439,14 @@ function App() {
 
           <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
             {page === "dashboard" && (
-              <Dashboard navigate={navigate} query={globalQuery} />
+              <>
+                <Dashboard
+                  navigate={navigate}
+                  query={globalQuery}
+                  summary={dashboardSummary}
+                />
+                <AdminActionButton />
+              </>
             )}
 
             {page === "exploration" && (
@@ -569,7 +569,9 @@ function App() {
               />
             )}
 
-            {page === "profile" && <ProfilePage navigate={navigate} />}
+            {page === "profile" && (
+              <ProfilePage userEmail={userEmail} userRole={userRole} />
+            )}
           </main>
         </div>
       </div>
@@ -584,28 +586,20 @@ function App() {
 function Dashboard({
   navigate,
   query,
+  summary,
 }: {
   navigate: (page: Page) => void;
   query: string;
+  summary: DashboardSummary;
 }) {
   const [period, setPeriod] = useState("30 Hari Terakhir");
   const [showPeriods, setShowPeriods] = useState(false);
-  const transactions = [
-    { id: "#TRX-2024-889", name: "SMA Taruna Nusantara", location: "Kampung Topeng Malang", amount: "Rp3.600.000", status: "Terverifikasi" },
-    { id: "#TRX-2024-890", name: "Dr. Helena Meyer", location: "Sanggar Cirebon Slangit", amount: "Rp850.000", status: "Menunggu" },
-    { id: "#TRX-2024-882", name: "Komunitas Tari Sekar", location: "Sentra Topeng Kayu Bobung", amount: "Rp2.450.000", status: "Terverifikasi" },
-    { id: "#TRX-2024-891", name: "Bpk. Bambang Sutrisno", location: "Padepokan Klaten Panji", amount: "Rp600.000", status: "Terverifikasi" },
-  ];
-  const visibleTransactions = transactions.filter((item) =>
+  const visibleTransactions = summary.transactions.filter((item) =>
     `${item.id} ${item.name} ${item.location} ${item.amount} ${item.status}`
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
   );
-  const masterclasses = [
-    { time: "09:00", title: "Pahat Karakter Wajah Panji", maestro: "Ki Suwito", place: "Kampung Topeng Malang" },
-    { time: "13:00", title: "Sungging Alami Pigmen Getah", maestro: "Mbah Rasimun", place: "Padepokan Klaten Panji" },
-    { time: "15:30", title: "Koreografi Tari Panji", maestro: "Dra. Endang", place: "Sanggar Cirebon" },
-  ].filter((item) =>
+  const masterclasses = summary.masterclasses.filter((item) =>
     `${item.title} ${item.maestro} ${item.place}`
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
@@ -621,7 +615,7 @@ function Dashboard({
           </p>
 
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Selamat Datang, Raden Arya!
+            Selamat Datang, Admin!
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
@@ -675,32 +669,36 @@ function Dashboard({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Kunjungan"
-          value="24.580"
-          subtitle="+14.2% dari bulan lalu"
+          value={summary.visits.toLocaleString("id-ID")}
+          subtitle="Data belum tersedia"
           icon={Users}
           onClick={() => navigate("exploration")}
         />
 
         <StatCard
           title="Tiket Terverifikasi"
-          value="1.824"
-          subtitle="+8.5% dari bulan lalu"
+          value={summary.verifiedTickets.toLocaleString("id-ID")}
+          subtitle="Data belum tersedia"
           icon={Ticket}
           onClick={() => navigate("ticketing")}
         />
 
         <StatCard
           title="Sesi Maestro Aktif"
-          value="42"
-          subtitle="5 perlu konfirmasi"
+          value={summary.activeSessions.toLocaleString("id-ID")}
+          subtitle="Jadwal belum dikonfirmasi"
           icon={CalendarDays}
           onClick={() => navigate("booking")}
         />
 
         <StatCard
           title="Pendapatan Budaya"
-          value="Rp148,6 Juta"
-          subtitle="+18.4% dari bulan lalu"
+          value={summary.revenue.toLocaleString("id-ID", {
+            style: "currency",
+            currency: "IDR",
+            maximumFractionDigits: 0,
+          })}
+          subtitle="Data belum tersedia"
           icon={WalletCards}
           onClick={() => navigate("payment")}
         />
@@ -792,7 +790,7 @@ function Dashboard({
             </h2>
 
             <p className="mt-1 text-xs text-slate-400">
-              Berdasarkan aktivitas pengunjung
+              Lokasi yang tercantum pada wireframe
             </p>
           </div>
 
@@ -807,29 +805,29 @@ function Dashboard({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <FavoriteCard
             number="01"
-            name="Kampung Topeng Malang"
-            visits="8.420 kunjungan"
+            name="Makam Mbah Reni"
+            visits="Jumlah kunjungan belum tersedia"
             onClick={() => navigate("exploration")}
           />
 
           <FavoriteCard
             number="02"
-            name="Sanggar Cirebon Slangit"
-            visits="6.280 kunjungan"
+            name="Situs Sumur Windu"
+            visits="Jumlah kunjungan belum tersedia"
             onClick={() => navigate("exploration")}
           />
 
           <FavoriteCard
             number="03"
-            name="Padepokan Klaten Panji"
-            visits="5.120 kunjungan"
+            name="Mandala Empu Purwa"
+            visits="Jumlah kunjungan belum tersedia"
             onClick={() => navigate("exploration")}
           />
 
           <FavoriteCard
             number="04"
-            name="Sentra Kayu Bobung"
-            visits="4.760 kunjungan"
+            name="Situs Joko Lolo"
+            visits="Jumlah kunjungan belum tersedia"
             onClick={() => navigate("exploration")}
           />
         </div>
@@ -876,7 +874,7 @@ function StatCard({
       </div>
 
       <h3 className="text-2xl font-bold tracking-tight text-slate-900">
-        {value}
+        {value.startsWith("Rp") ? `Rp ${value.slice(2).trim()}` : value}
       </h3>
 
       <p className="mt-2 text-xs font-medium text-emerald-600">{subtitle}</p>
@@ -941,7 +939,6 @@ function TransactionRow({
 // =============================================================
 // MASTERCLASS
 // =============================================================
-
 function Masterclass({
   time,
   title,
@@ -955,28 +952,34 @@ function Masterclass({
   place: string;
   onClick: () => void;
 }) {
+  const [dateLabel, timeLabel] = time.split(" · ");
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full gap-4 rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50"
+      className="flex w-full items-center gap-4 rounded-xl border border-slate-100 p-4 text-left transition hover:bg-slate-50"
     >
-      <div className="flex w-14 flex-col items-center justify-center rounded-xl bg-emerald-50">
-        <span className="text-xs font-bold text-emerald-700">{time}</span>
-        <span className="mt-1 text-[9px] text-slate-400">WIB</span>
+      <div className="flex w-24 shrink-0 flex-col items-center justify-center self-stretch rounded-xl bg-emerald-50 px-2 py-3 text-center">
+        <span className="text-[11px] font-bold leading-tight text-emerald-700">
+          {dateLabel}
+        </span>
+
+        {timeLabel && (
+          <span className="mt-1 text-[10px] font-semibold leading-tight text-emerald-700">
+            {timeLabel}
+          </span>
+        )}
       </div>
 
-      <div>
+      <div className="min-w-0 flex-1">
         <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-
         <p className="mt-1 text-xs text-emerald-700">{maestro}</p>
-
         <p className="mt-1 text-xs text-slate-400">{place}</p>
       </div>
     </button>
   );
 }
-
 // =============================================================
 // FAVORITE
 // =============================================================
@@ -1024,6 +1027,9 @@ type DataRecord = {
   amount: string;
   status: string;
   createdAt: string;
+  correctAnswer?: string;
+  correctClue?: string;
+  imageUrl?: string;
 };
 
 type DataDraft = Omit<DataRecord, "id" | "createdAt">;
@@ -1035,6 +1041,9 @@ const EMPTY_DRAFT: DataDraft = {
   date: "",
   amount: "",
   status: "Aktif",
+  correctAnswer: "",
+  correctClue: "",
+  imageUrl: "",
 };
 
 type GenericPageKind = Exclude<Page, "login" | "dashboard" | "profile">;
@@ -1049,93 +1058,193 @@ type ContentProfile = {
 // existing page layout stays the same; only the meaning of its fields changes.
 const CONTENT_PROFILES: Record<GenericPageKind, ContentProfile> = {
   exploration: {
-    fields: ["Nama kampung / titik lokasi", "Sejarah, tokoh, atau tradisi", "Alamat / wilayah", "Tahun berdiri / waktu kunjungan", "Jumlah kunjungan"],
-    statuses: ["Aktif", "Perlu verifikasi", "Nonaktif"],
+    fields: ["Nama lokasi", "Informasi", "Wilayah", "Tahun", "Catatan"],
+    statuses: ["Tercatat", "Perlu dilengkapi"],
     records: [
-      { name: "Kampung Topeng Malang", description: "Sejarah topeng Malangan, tokoh perajin, tradisi, dan dokumentasi kampung.", location: "Kedungmonggo, Pakisaji, Malang", date: "1930", amount: "8420", status: "Aktif" },
-      { name: "Sanggar Cirebon Slangit", description: "Sejarah tari topeng Cirebon dan profil maestro setempat.", location: "Slangit, Cirebon", date: "2000", amount: "6280", status: "Aktif" },
-      { name: "Sentra Topeng Kayu Bobung", description: "Dokumentasi pembuatan topeng kayu dan tradisi kerajinan.", location: "Bobung, Gunungkidul", date: "1970", amount: "4760", status: "Aktif" },
+      {
+        name: "Makam Mbah Reni",
+        description: "Titik budaya untuk dijelajahi.",
+        location: "",
+        date: "",
+        amount: "",
+        status: "Tercatat",
+      },
     ],
   },
+
   panji: {
-    fields: ["Nama pemberhentian", "Clue / cerita yang ditemukan", "Lokasi pemberhentian", "Urutan pemberhentian", "Poin reward"],
-    statuses: ["Terkunci", "Belum dikunjungi", "Selesai"],
-    records: [
-      { name: "Makam Mbah Reni", description: "Temukan petunjuk tentang asal-usul topeng Panji di titik ini.", location: "Kampung Topeng Malang", date: "1", amount: "50", status: "Belum dikunjungi" },
-      { name: "Sanggar Topeng", description: "Kenali proses pembuatan topeng dan kumpulkan clue berikutnya.", location: "Kampung Topeng Malang", date: "2", amount: "75", status: "Terkunci" },
-      { name: "Galeri Topeng", description: "Amati koleksi topeng untuk membuka rangkaian petunjuk.", location: "Kampung Topeng Malang", date: "3", amount: "100", status: "Terkunci" },
-      { name: "Situs Ken Dedes", description: "Selesaikan cerita Panji dan buka reward perjalanan.", location: "Malang", date: "4", amount: "150", status: "Terkunci" },
-    ],
+    fields: ["Nama game", "Rincian game", "Jawaban benar", "Clue", "Gambar"],
+    statuses: ["Aktif"],
+    records: [],
   },
+
   materi: {
-    fields: ["Judul materi / sesi", "Ringkasan materi", "Nama maestro / sanggar", "Tanggal sesi / urutan materi", "Durasi (menit)"],
-    statuses: ["Aktif", "Draft", "Penuh"],
+    fields: [
+      "Judul materi",
+      "Ringkasan",
+      "Maestro",
+      "Jumlah subbab",
+      "Catatan",
+    ],
+    statuses: ["Tersedia", "Perlu dilengkapi"],
     records: [
-      { name: "Pahat Karakter Wajah Panji", description: "Materi bertahap membentuk karakter topeng dari kayu.", location: "Ki Suwito · Kampung Topeng Malang", date: "Materi 1", amount: "90", status: "Aktif" },
-      { name: "Sungging Alami Pigmen Getah", description: "Video dan artikel teknik pewarnaan tradisional.", location: "Mbah Rasimun · Padepokan Klaten Panji", date: "Materi 2", amount: "60", status: "Aktif" },
-      { name: "Koreografi Tari Panji", description: "Panduan gerak tari dalam format video dan PDF.", location: "Dra. Endang · Sanggar Cirebon", date: "Materi 3", amount: "75", status: "Aktif" },
+      {
+        name: "Makam Mbah Reni",
+        description: "Materi budaya dengan 3 subbab.",
+        location: "Ki Sujono",
+        date: "",
+        amount: "3 subbab",
+        status: "Tersedia",
+      },
+      {
+        name: "Situs Sumur Windu",
+        description: "Materi budaya dengan 3 subbab.",
+        location: "Ki Sujono",
+        date: "",
+        amount: "3 subbab",
+        status: "Tersedia",
+      },
+      {
+        name: "Mandala Empu Purwa",
+        description: "Materi budaya dengan 3 subbab.",
+        location: "Ki Sujono",
+        date: "",
+        amount: "3 subbab",
+        status: "Tersedia",
+      },
+      {
+        name: "Situs Joko Lolo",
+        description: "Materi budaya dengan 3 subbab.",
+        location: "Ki Sujono",
+        date: "",
+        amount: "3 subbab",
+        status: "Tersedia",
+      },
     ],
   },
+
   booking: {
-    fields: ["Nama sesi / pemesan", "Catatan konfirmasi", "Maestro / lokasi", "Tanggal dan jam sesi", "Jumlah peserta"],
-    statuses: ["Menunggu konfirmasi", "Dikonfirmasi", "Penuh", "Selesai"],
+    fields: ["Nama sesi", "Informasi", "Tempat", "Durasi", "Catatan"],
+    statuses: ["Booking", "Perlu konfirmasi"],
     records: [
-      { name: "Pahat Karakter Wajah Panji", description: "Booking sesi langsung dengan maestro.", location: "Ki Suwito · Kampung Topeng Malang", date: "09:00 WIB", amount: "12 peserta", status: "Dikonfirmasi" },
-      { name: "Sungging Alami Pigmen Getah", description: "Menunggu konfirmasi jadwal dari maestro.", location: "Mbah Rasimun · Padepokan Klaten Panji", date: "13:00 WIB", amount: "8 peserta", status: "Menunggu konfirmasi" },
-      { name: "Koreografi Tari Panji", description: "Sesi pengenalan gerak tari topeng.", location: "Dra. Endang · Sanggar Cirebon", date: "15:30 WIB", amount: "10 peserta", status: "Dikonfirmasi" },
+      {
+        name: "Booking Sesi Ki Sujono",
+        description: "Sesi bersama Ki Sujono.",
+        location: "Tempat Sanggar Topeng",
+        date: "",
+        amount: "90 menit",
+        status: "Booking",
+      },
     ],
   },
+
   progres: {
-    fields: ["Nama misi / modul", "Target dan ringkasan capaian", "Nama peserta / kelompok", "Tanggal aktivitas", "Poin / capaian"],
-    statuses: ["Belum mulai", "Berlangsung", "Selesai"],
+    fields: ["Nama peserta", "Progres", "Peringkat", "Tanggal", "Capaian"],
+    statuses: ["Peserta", "Belum ada data"],
     records: [
-      { name: "Selesaikan materi dasar topeng", description: "Tuntaskan seluruh materi bertahap untuk mendapat lencana.", location: "Pengunjung Jelajah Topeng", date: "Minggu ini", amount: "2 dari 4 materi", status: "Berlangsung" },
-      { name: "Kumpulkan clue Jejak Sang Panji", description: "Selesaikan pemberhentian untuk membuka reward.", location: "Peserta Jejak Panji", date: "Minggu ini", amount: "0 dari 5 clue", status: "Belum mulai" },
-      { name: "Ikuti sesi bersama maestro", description: "Riwayat keikutsertaan sesi budaya.", location: "Komunitas Tari Sekar", date: "Bulan ini", amount: "100 poin", status: "Selesai" },
+      {
+        name: "Raja Esa Abdilah",
+        description: "Progres belajar: 4 dari 5.",
+        location: "",
+        date: "",
+        amount: "4/5",
+        status: "Peserta",
+      },
+      {
+        name: "Jenri Setiawan Sitepu",
+        description: "Progres belajar: 2 dari 5.",
+        location: "",
+        date: "",
+        amount: "2/5",
+        status: "Peserta",
+      },
+      {
+        name: "Ardli Miftah",
+        description: "Progres belajar: 0 dari 5.",
+        location: "",
+        date: "",
+        amount: "0/5",
+        status: "Peserta",
+      },
     ],
   },
+
   ticketing: {
-    fields: ["Nama paket kunjungan", "Detail paket dan fasilitas", "Kampung / lokasi tujuan", "Tanggal kunjungan", "Harga per paket (Rp)"],
-    statuses: ["Tersedia", "Habis", "Draft"],
+    fields: ["Nama paket", "Fasilitas", "Lokasi", "Tanggal", "Harga"],
+    statuses: ["Detail tersedia", "Detail belum tersedia"],
     records: [
-      { name: "Tur Kampung Topeng", description: "Tur kampung, galeri topeng, dan pengenalan sejarah.", location: "Kampung Topeng Malang", date: "Pilih saat pesan", amount: "150000", status: "Tersedia" },
-      { name: "Workshop Pembuatan Topeng", description: "Kunjungan dan praktik bersama perajin lokal.", location: "Sentra Topeng Kayu Bobung", date: "Pilih saat pesan", amount: "250000", status: "Tersedia" },
-      { name: "Paket Jelajah Sanggar", description: "Kunjungan sanggar dan pertunjukan budaya.", location: "Sanggar Cirebon Slangit", date: "Pilih saat pesan", amount: "200000", status: "Tersedia" },
+      {
+        name: "Paket Sumbang Kampung",
+        description:
+          "Maksimal 30 orang. Termasuk pembelajaran budaya, tari/topeng tradisional, dokumentasi, demo batik/topeng, camilan, dan minuman. Tambahan makan Rp20.000/orang.",
+        location: "",
+        date: "",
+        amount: "Rp1.000.000 · tambahan peserta Rp25.000/orang",
+        status: "Detail tersedia",
+      },
+      {
+        name: "Paket Sobo Pawon",
+        description: "Informasi paket belum tersedia.",
+        location: "",
+        date: "",
+        amount: "",
+        status: "Detail belum tersedia",
+      },
+      {
+        name: "Paket Medayoh",
+        description: "Informasi paket belum tersedia.",
+        location: "",
+        date: "",
+        amount: "",
+        status: "Detail belum tersedia",
+      },
+      {
+        name: "Paket Selametan/Metri",
+        description: "Informasi paket belum tersedia.",
+        location: "",
+        date: "",
+        amount: "",
+        status: "Detail belum tersedia",
+      },
+      {
+        name: "Paket Hasfa Karya",
+        description: "Informasi paket belum tersedia.",
+        location: "",
+        date: "",
+        amount: "",
+        status: "Detail belum tersedia",
+      },
     ],
   },
+
   payment: {
-    fields: ["Kode / nama pemesan", "Rincian tiket dan pembayaran", "Paket / lokasi tujuan", "Tanggal transaksi", "Total pembayaran (Rp)"],
-    statuses: ["Menunggu pembayaran", "Terverifikasi", "Gagal"],
-    records: [
-      { name: "TRX-2026-001 · SMA Taruna Nusantara", description: "Checkout Tur Kampung Topeng · 24 peserta.", location: "Kampung Topeng Malang", date: "5 Oktober 2026", amount: "3600000", status: "Terverifikasi" },
-      { name: "TRX-2026-002 · Dr. Helena Meyer", description: "Checkout Workshop Pembuatan Topeng · 2 peserta.", location: "Sentra Topeng Kayu Bobung", date: "5 Oktober 2026", amount: "500000", status: "Menunggu pembayaran" },
-    ],
+    fields: ["Kode transaksi", "Rincian", "Lokasi", "Tanggal", "Jumlah"],
+    statuses: ["Belum ada data"],
+    records: [],
   },
+
   notification: {
-    fields: ["Judul notifikasi", "Isi pemberitahuan", "Penerima / fitur", "Jadwal kirim", "Jumlah penerima"],
-    statuses: ["Draft", "Terjadwal", "Terkirim"],
-    records: [
-      { name: "Pengingat jadwal maestro", description: "Sesi Pahat Karakter Wajah Panji dimulai pukul 09:00 WIB.", location: "Peserta booking", date: "Hari ini · 08:00 WIB", amount: "12 pengguna", status: "Terkirim" },
-      { name: "Booking berhasil dikonfirmasi", description: "Simpan detail jadwal dan tunjukkan konfirmasi saat hadir.", location: "Pemesan sesi maestro", date: "Saat status berubah", amount: "8 pengguna", status: "Terjadwal" },
-      { name: "Misi baru tersedia", description: "Jelajahi pemberhentian berikutnya untuk mengumpulkan clue.", location: "Peserta Jejak Sang Panji", date: "Belum dijadwalkan", amount: "Semua peserta", status: "Draft" },
-    ],
+    fields: ["Judul", "Isi", "Penerima", "Tanggal", "Catatan"],
+    statuses: ["Belum ada data"],
+    records: [],
   },
+
   faq: {
-    fields: ["Pertanyaan", "Jawaban / panduan", "Kategori bantuan", "Tanggal pembaruan", "Kata kunci"],
-    statuses: ["Terbit", "Draft", "Perlu diperbarui"],
-    records: [
-      { name: "Bagaimana cara memesan tiket kunjungan?", description: "Pilih paket, tentukan jumlah peserta dan tanggal, isi data pemesan, lalu lanjutkan checkout.", location: "Ticketing Online", date: "5 Oktober 2026", amount: "tiket, booking", status: "Terbit" },
-      { name: "Bagaimana cara booking sesi maestro?", description: "Pilih sesi yang tersedia di kalender, isi formulir konfirmasi, lalu cek riwayat booking.", location: "Belajar dengan Maestro", date: "5 Oktober 2026", amount: "maestro, jadwal", status: "Terbit" },
-      { name: "Di mana e-ticket dan QR code saya?", description: "E-ticket tersedia pada riwayat pembelian setelah pembayaran terverifikasi.", location: "Pembayaran", date: "5 Oktober 2026", amount: "e-ticket, QR", status: "Terbit" },
-    ],
+    fields: ["Pertanyaan", "Jawaban", "Kategori", "Tanggal", "Catatan"],
+    statuses: ["Belum ada data"],
+    records: [],
   },
+
   users: {
-    fields: ["Nama pengguna", "Informasi profil", "Email pengguna", "Tanggal bergabung", "Kontak"],
-    statuses: ["Aktif", "Perlu dilengkapi", "Nonaktif"],
-    records: [
-      { name: "Raden Arya", description: "Profil pengunjung Jelajah Topeng.", location: "raden.arya@example.com", date: "5 Oktober 2026", amount: "+62 812-3456-7890", status: "Aktif" },
-      { name: "Komunitas Tari Sekar", description: "Profil kelompok untuk booking dan pembelian tiket.", location: "sekar@example.com", date: "5 Oktober 2026", amount: "-", status: "Perlu dilengkapi" },
+    fields: [
+      "Nama pengguna",
+      "Informasi profil",
+      "Email",
+      "Tanggal",
+      "Catatan",
     ],
+    statuses: ["Belum ada data"],
+    records: [],
   },
 };
 
@@ -1195,6 +1304,9 @@ function GenericPage({
                 amount: record.amount ?? "",
                 status: record.status ?? "Aktif",
                 createdAt: record.createdAt ?? new Date(0).toISOString(),
+                correctAnswer: record.correctAnswer ?? "",
+                correctClue: record.correctClue ?? "",
+                imageUrl: record.imageUrl ?? "",
               },
             ];
           }
@@ -1217,6 +1329,7 @@ function GenericPage({
   const [draft, setDraft] = useState<DataDraft>(EMPTY_DRAFT);
   const [selectedItem, setSelectedItem] = useState<DataRecord | null>(null);
   const [message, setMessage] = useState("");
+  const [imageError, setImageError] = useState("");
   const pageSize = 3;
   const matchingItems = items
     .filter((item) =>
@@ -1289,6 +1402,9 @@ function GenericPage({
       description: draft.description.trim(),
       location: draft.location.trim(),
       amount: draft.amount.trim(),
+      correctAnswer: draft.correctAnswer?.trim() ?? "",
+      correctClue: draft.correctClue?.trim() ?? "",
+      imageUrl: draft.imageUrl ?? "",
       id:
         selectedItem?.id ??
         `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -1303,6 +1419,7 @@ function GenericPage({
     setEditing(false);
     setSelectedItem(null);
     setDraft(EMPTY_DRAFT);
+    setImageError("");
     setPage(1);
   }
 
@@ -1315,6 +1432,9 @@ function GenericPage({
       date: item.date,
       amount: item.amount,
       status: item.status,
+      correctAnswer: item.correctAnswer ?? "",
+      correctClue: item.correctClue ?? "",
+      imageUrl: item.imageUrl ?? "",
     });
     setAdding(false);
     setEditing(true);
@@ -1446,7 +1566,10 @@ function GenericPage({
         <div className="divide-y divide-slate-100">
           {visibleItems.length ? (
             visibleItems.map((item, index) => (
-              <div key={item.id} className="flex flex-wrap items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5"
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-500">
                   {String((currentPage - 1) * pageSize + index + 1).padStart(
                     2,
@@ -1575,7 +1698,7 @@ function GenericPage({
             role="dialog"
             aria-modal="true"
             aria-labelledby="data-dialog-title"
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
           >
             <h2
               id="data-dialog-title"
@@ -1588,88 +1711,205 @@ function GenericPage({
                   : "Detail Data"}
             </h2>
             {adding || editing ? (
-              <form onSubmit={handleSave} className="mt-4 space-y-3">
-                <label
-                  htmlFor="new-data"
-                  className="block text-sm font-medium text-slate-700"
-                >
-                  {profile.fields[0]}
-                </label>
-                <input
-                  id="new-data"
-                  autoFocus
-                  required
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
-                />
-                <label className="block text-sm font-medium text-slate-700">
-                  {profile.fields[1]}
-                  <textarea
-                    value={draft.description}
-                    onChange={(e) =>
-                      setDraft({ ...draft, description: e.target.value })
-                    }
-                    rows={3}
-                    className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-700">
-                  {profile.fields[2]}
-                  <input
-                    value={draft.location}
-                    onChange={(e) =>
-                      setDraft({ ...draft, location: e.target.value })
-                    }
-                    className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
-                  />
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="block text-sm font-medium text-slate-700">
-                    {profile.fields[3]}
-                    <input
-                      type="text"
-                      value={draft.date}
-                      onChange={(e) =>
-                        setDraft({ ...draft, date: e.target.value })
-                      }
-                      placeholder={profile.fields[3]}
-                      className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
-                    />
-                  </label>
-                  <label className="block text-sm font-medium text-slate-700">
-                    {profile.fields[4]}
-                    <input
-                      value={draft.amount}
-                      onChange={(e) =>
-                        setDraft({ ...draft, amount: e.target.value })
-                      }
-                      placeholder={profile.fields[4]}
-                      className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
-                    />
-                  </label>
-                </div>
-                <label className="block text-sm font-medium text-slate-700">
-                  Status
-                  <select
-                    value={draft.status}
-                    onChange={(e) =>
-                      setDraft({ ...draft, status: e.target.value })
-                    }
-                    className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-emerald-600"
-                  >
-                    {profile.statuses.map((status) => (
-                      <option key={status}>{status}</option>
-                    ))}
-                  </select>
-                </label>
-                <div className="mt-6 flex justify-end gap-3">
+              <form onSubmit={handleSave} className="mt-4 space-y-4">
+                {kind === "panji" ? (
+                  <>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Nama game
+                      <input
+                        autoFocus
+                        required
+                        value={draft.name}
+                        onChange={(e) =>
+                          setDraft({ ...draft, name: e.target.value })
+                        }
+                        placeholder="Contoh: Teka-teki Topeng Panji"
+                        className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Rincian atau isi game
+                      <textarea
+                        required
+                        value={draft.description}
+                        onChange={(e) =>
+                          setDraft({ ...draft, description: e.target.value })
+                        }
+                        placeholder="Tuliskan cerita, pertanyaan, atau instruksi permainan"
+                        rows={4}
+                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Jawaban yang benar
+                      <input
+                        required
+                        value={draft.correctAnswer ?? ""}
+                        onChange={(e) =>
+                          setDraft({ ...draft, correctAnswer: e.target.value })
+                        }
+                        placeholder="Masukkan jawaban yang benar"
+                        className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Clue jika jawaban benar
+                      <textarea
+                        required
+                        value={draft.correctClue ?? ""}
+                        onChange={(e) =>
+                          setDraft({ ...draft, correctClue: e.target.value })
+                        }
+                        placeholder="Petunjuk yang diberikan setelah pemain menjawab benar"
+                        rows={3}
+                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Gambar yang relevan
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        required={!draft.imageUrl}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 900 * 1024) {
+                            setImageError(
+                              "Ukuran gambar maksimal 900 KB. Pilih gambar yang lebih kecil.",
+                            );
+                            e.target.value = "";
+                            return;
+                          }
+                          setImageError("");
+                          const reader = new FileReader();
+                          reader.onload = () =>
+                            setDraft((current) => ({
+                              ...current,
+                              imageUrl: String(reader.result ?? ""),
+                            }));
+                          reader.onerror = () =>
+                            setImageError(
+                              "Gambar tidak dapat dibaca. Coba pilih file lain.",
+                            );
+                          reader.readAsDataURL(file);
+                        }}
+                        className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      />
+                      <span className="mt-1 block text-xs font-normal text-slate-400">
+                        Format JPG, PNG, WEBP, atau GIF. Maksimal 900 KB.
+                      </span>
+                    </label>
+                    {imageError && (
+                      <p role="alert" className="text-sm text-red-600">
+                        {imageError}
+                      </p>
+                    )}
+                    {draft.imageUrl && (
+                      <div className="space-y-2">
+                        <img
+                          src={draft.imageUrl}
+                          alt="Pratinjau gambar game"
+                          className="max-h-52 w-full rounded-xl border border-slate-200 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDraft({ ...draft, imageUrl: "" });
+                            setImageError("");
+                          }}
+                          className="text-sm font-medium text-red-600 hover:text-red-700"
+                        >
+                          Hapus gambar
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <label className="block text-sm font-medium text-slate-700">
+                      {profile.fields[0]}
+                      <input
+                        autoFocus
+                        required
+                        value={draft.name}
+                        onChange={(e) =>
+                          setDraft({ ...draft, name: e.target.value })
+                        }
+                        className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">
+                      {profile.fields[1]}
+                      <textarea
+                        value={draft.description}
+                        onChange={(e) =>
+                          setDraft({ ...draft, description: e.target.value })
+                        }
+                        rows={3}
+                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-700">
+                      {profile.fields[2]}
+                      <input
+                        value={draft.location}
+                        onChange={(e) =>
+                          setDraft({ ...draft, location: e.target.value })
+                        }
+                        className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                      />
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="block text-sm font-medium text-slate-700">
+                        {profile.fields[3]}
+                        <input
+                          type="text"
+                          value={draft.date}
+                          onChange={(e) =>
+                            setDraft({ ...draft, date: e.target.value })
+                          }
+                          placeholder={profile.fields[3]}
+                          className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                        />
+                      </label>
+                      <label className="block text-sm font-medium text-slate-700">
+                        {profile.fields[4]}
+                        <input
+                          value={draft.amount}
+                          onChange={(e) =>
+                            setDraft({ ...draft, amount: e.target.value })
+                          }
+                          placeholder={profile.fields[4]}
+                          className="mt-2 h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                        />
+                      </label>
+                    </div>
+                    <label className="block text-sm font-medium text-slate-700">
+                      Status
+                      <select
+                        value={draft.status}
+                        onChange={(e) =>
+                          setDraft({ ...draft, status: e.target.value })
+                        }
+                        className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-emerald-600"
+                      >
+                        {profile.statuses.map((status) => (
+                          <option key={status}>{status}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
+                <div className="flex justify-end gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setAdding(false);
                       setEditing(false);
                       setSelectedItem(null);
+                      setDraft(EMPTY_DRAFT);
+                      setImageError("");
                     }}
                     className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
                   >
@@ -1677,7 +1917,13 @@ function GenericPage({
                   </button>
                   <button
                     type="submit"
-                    disabled={!draft.name.trim()}
+                    disabled={
+                      !draft.name.trim() ||
+                      (kind === "panji" &&
+                        (!draft.correctAnswer?.trim() ||
+                          !draft.correctClue?.trim() ||
+                          !draft.imageUrl))
+                    }
                     className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   >
                     {editing ? "Simpan Perubahan" : "Simpan"}
@@ -1686,54 +1932,98 @@ function GenericPage({
               </form>
             ) : (
               <>
-                <dl className="mt-5 space-y-3 text-sm">
-                  <div>
-                    <dt className="text-xs text-slate-400">
-                      {profile.fields[0]}
-                    </dt>
-                    <dd className="font-semibold text-slate-800">
-                      {selectedItem?.name}
-                    </dd>
+                {kind === "panji" ? (
+                  <div className="mt-5 space-y-4 text-sm">
+                    {selectedItem?.imageUrl && (
+                      <img
+                        src={selectedItem.imageUrl}
+                        alt={`Gambar ${selectedItem.name}`}
+                        className="max-h-64 w-full rounded-xl border border-slate-200 object-cover"
+                      />
+                    )}
+                    <dl className="space-y-3">
+                      <div>
+                        <dt className="text-xs text-slate-400">Nama game</dt>
+                        <dd className="font-semibold text-slate-800">
+                          {selectedItem?.name}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-400">
+                          Rincian atau isi game
+                        </dt>
+                        <dd className="whitespace-pre-wrap text-slate-700">
+                          {selectedItem?.description || "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-400">
+                          Jawaban yang benar
+                        </dt>
+                        <dd className="text-slate-700">
+                          {selectedItem?.correctAnswer || "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-400">
+                          Clue jika jawaban benar
+                        </dt>
+                        <dd className="whitespace-pre-wrap text-slate-700">
+                          {selectedItem?.correctClue || "—"}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
-                  <div>
-                    <dt className="text-xs text-slate-400">
-                      {profile.fields[1]}
-                    </dt>
-                    <dd className="text-slate-700">
-                      {selectedItem?.description || "—"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-slate-400">
-                      {profile.fields[2]}
-                    </dt>
-                    <dd className="text-slate-700">
-                      {selectedItem?.location || "—"}
-                    </dd>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
+                ) : (
+                  <dl className="mt-5 space-y-3 text-sm">
                     <div>
                       <dt className="text-xs text-slate-400">
-                        {profile.fields[3]}
+                        {profile.fields[0]}
                       </dt>
-                      <dd className="text-slate-700">
-                        {selectedItem?.date || "—"}
+                      <dd className="font-semibold text-slate-800">
+                        {selectedItem?.name}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-xs text-slate-400">
-                        {profile.fields[4]}
+                        {profile.fields[1]}
                       </dt>
                       <dd className="text-slate-700">
-                        {selectedItem?.amount || "—"}
+                        {selectedItem?.description || "—"}
                       </dd>
                     </div>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-slate-400">Status</dt>
-                    <dd className="text-slate-700">{selectedItem?.status}</dd>
-                  </div>
-                </dl>
+                    <div>
+                      <dt className="text-xs text-slate-400">
+                        {profile.fields[2]}
+                      </dt>
+                      <dd className="text-slate-700">
+                        {selectedItem?.location || "—"}
+                      </dd>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <dt className="text-xs text-slate-400">
+                          {profile.fields[3]}
+                        </dt>
+                        <dd className="text-slate-700">
+                          {selectedItem?.date || "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-slate-400">
+                          {profile.fields[4]}
+                        </dt>
+                        <dd className="text-slate-700">
+                          {selectedItem?.amount || "—"}
+                        </dd>
+                      </div>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-slate-400">Status</dt>
+                      <dd className="text-slate-700">{selectedItem?.status}</dd>
+                    </div>
+                  </dl>
+                )}
                 <div className="mt-6 flex justify-between">
                   <button
                     type="button"
@@ -1782,11 +2072,11 @@ type AdminProfile = {
 
 const PROFILE_STORAGE_KEY = "jelajah-topeng:admin-profile";
 const DEFAULT_PROFILE: AdminProfile = {
-  firstName: "Raden",
-  lastName: "Arya, S.Sn",
-  title: "Super Admin & Kepala Kurator Pelestarian Seni Tari Panji",
-  email: "raden.arya@jelajahtopeng.id",
-  phone: "+62 812-3456-7890",
+  firstName: "Admin",
+  lastName: "Jelajah Topeng",
+  title: "Administrator",
+  email: "",
+  phone: "",
 };
 
 function readProfile(): AdminProfile {
@@ -1800,7 +2090,13 @@ function readProfile(): AdminProfile {
   }
 }
 
-function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
+function ProfilePage({
+  userEmail,
+  userRole,
+}: {
+  userEmail: string;
+  userRole: "admin" | "user";
+}) {
   const [profile, setProfile] = useState<AdminProfile>(readProfile);
   const [message, setMessage] = useState("");
 
@@ -1820,13 +2116,6 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
     }
   }
 
-  function resetLocalCredentials() {
-    localStorage.removeItem(LOCAL_ADMIN_KEY);
-    localStorage.removeItem(LOCAL_SESSION_KEY);
-    sessionStorage.removeItem(LOCAL_SESSION_KEY);
-    navigate("login");
-  }
-
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
@@ -1838,7 +2127,8 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
             Profil Admin & Pengaturan Akun
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Perubahan profil disimpan di browser ini.
+            Profil tampilan disimpan di browser ini. Peran akun berasal dari
+            sesi server.
           </p>
         </div>
         <div className="flex gap-3">
@@ -1880,11 +2170,13 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
                 {profile.firstName} {profile.lastName}
               </h2>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Admin
+                {userRole === "admin" ? "Admin" : "Pengguna"}
               </span>
             </div>
             <p className="mt-2 font-medium text-emerald-700">{profile.title}</p>
-            <p className="mt-2 text-sm text-slate-400">{profile.email}</p>
+            <p className="mt-2 text-sm text-slate-400">
+              {userEmail || profile.email}
+            </p>
           </div>
         </div>
       </section>
@@ -1937,20 +2229,16 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
               <h2 className="font-bold text-slate-900">
                 Keamanan & Kata Sandi
               </h2>
-              <p className="text-xs text-slate-400">Akun demo lokal</p>
+              <p className="text-xs text-slate-400">Sesi dikelola Auth.js</p>
             </div>
           </div>
           <p className="mb-4 text-sm text-slate-600">
-            Reset akan menghapus kredensial lokal dan meminta kamu membuat kata
-            sandi baru.
+            Autentikasi email dan Google membuat cookie sesi di server.
+            Kredensial tidak disimpan di localStorage.
           </p>
-          <button
-            type="button"
-            onClick={resetLocalCredentials}
-            className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-          >
-            Atur Ulang Kredensial Lokal
-          </button>
+          <span className="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+            Sesi server aktif
+          </span>
         </section>
       </div>
 
@@ -1962,24 +2250,25 @@ function ProfilePage({ navigate }: { navigate: (page: Page) => void }) {
           <div>
             <h2 className="font-bold text-slate-900">Status Autentikasi</h2>
             <p className="mt-1 text-sm text-slate-400">
-              Login demo lokal aktif di browser ini. Tidak melindungi data di
-              website publik.
+              Dashboard memverifikasi sesi pada server; data ringkasan dikirim
+              sebagai DTO terbatas melalui DAL.
             </p>
           </div>
           <span className="ml-auto rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-            Demo lokal
+            Auth.js · {userRole}
           </span>
         </div>
       </section>
 
-      <button
-        type="button"
-        onClick={() => navigate("login")}
-        className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
-      >
-        <LogOut size={17} />
-        Keluar
-      </button>
+      <form action={signOutAction}>
+        <button
+          type="submit"
+          className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
+        >
+          <LogOut size={17} />
+          Keluar
+        </button>
+      </form>
     </div>
   );
 }
