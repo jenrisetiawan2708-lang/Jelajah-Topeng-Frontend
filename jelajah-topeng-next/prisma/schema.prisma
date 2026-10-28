@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ContentRecord {
+  id            String   @id @default(cuid())
+  userId        String
+  kind          String
+  name          String
+  description   String   @default("")
+  location      String   @default("")
+  date          String   @default("")
+  amount        String   @default("")
+  status        String   @default("")
+  correctAnswer String   @default("")
+  correctClue   String   @default("")
+  imageUrl      String   @default("")
+  eventDate     String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId, kind])
+}
+
+// Penanda: data contoh sudah dimasukkan untuk user + halaman tertentu.
+model SeededKind {
+  userId String
+  kind   String
+
+  @@id([userId, kind])
+}
+
+model Refund {
+  id           String    @id @default(cuid())
+  userId       String
+  code         String
+  requester    String
+  participants String    @default("")
+  destination  String
+  trxCode      String
+  visitInfo    String    @default("")
+  filedAt      DateTime
+  proofAt      DateTime
+  amount       Int
+  reason       String
+  reasonDetail String    @default("")
+  method       String
+  status       String
+  rejectReason String    @default("")
+  adminNote    String    @default("")
+  decidedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([userId, code])
+  @@index([userId, status])
+}

@@ -1,9 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import type React from "react";
+import { useActionState, useEffect, useState } from "react";
 import { signOutAction } from "@/app/actions/auth";
+import { deleteRecord, saveRecord } from "@/app/actions/records";
 import type { DashboardSummary } from "@/lib/dal";
+import {
+  CONTENT_PROFILES,
+  KINDS,
+  WILAYAH_SUGGESTIONS,
+  type FieldErrors,
+  type FormState,
+  type RecordDTO,
+  type RecordDraft,
+  type RecordKind,
+  type RecordsByKind,
+} from "@/lib/content-config";
+import { checkRecord, type FieldKey } from "@/lib/schemas";
 import {
   Bell,
   BookOpen,
@@ -20,6 +32,7 @@ import {
   LogOut,
   Menu,
   Pencil,
+  Receipt,
   Search,
   Settings,
   ShieldCheck,
@@ -36,7 +49,9 @@ import {
 
 import logo from "@/assets/logo-jelajah-topeng.png";
 import AdminActionButton from "@/components/AdminActionButton";
+import RefundPage from "@/components/RefundPage";
 import { useToast } from "@/components/ToastProvider";
+import type { RefundDTO } from "@/lib/refund-schema";
 
 type Page =
   | "dashboard"
@@ -47,6 +62,7 @@ type Page =
   | "progres"
   | "ticketing"
   | "payment"
+  | "refund"
   | "notification"
   | "faq"
   | "users"
@@ -69,6 +85,8 @@ const PAGE_DESCRIPTIONS: Record<Page, string> = {
     "Pilih paket kunjungan, jumlah peserta, tanggal, isi data pemesan, lalu lanjut checkout.",
   payment:
     "Tinjau ringkasan checkout, status pembayaran, e-ticket/QR code, dan riwayat pembelian.",
+  refund:
+    "Pantau pengajuan refund, verifikasi bukti, dan catat status penyelesaian refund tiket budaya.",
   notification:
     "Lihat pengingat jadwal, status booking, pembaruan misi, dan informasi perjalanan budaya.",
   faq: "Temukan panduan akun, eksplorasi, booking maestro, tiket, checkout, dan pembayaran.",
@@ -80,10 +98,14 @@ const PAGE_DESCRIPTIONS: Record<Page, string> = {
 
 function App({
   dashboardSummary,
+  records,
+  refunds,
   userEmail,
   userRole,
 }: {
   dashboardSummary: DashboardSummary;
+  records: RecordsByKind;
+  refunds: RefundDTO[];
   userEmail: string;
   userRole: "admin" | "user";
 }) {
@@ -173,6 +195,11 @@ function App({
       icon: CreditCard,
     },
     {
+      id: "refund" as Page,
+      label: "Manajemen Refund",
+      icon: Receipt,
+    },
+    {
       id: "notification" as Page,
       label: "Kelola Notifikasi",
       icon: Bell,
@@ -206,6 +233,7 @@ function App({
     progres: "Progres Budaya",
     ticketing: "Ticketing Online",
     payment: "Pembayaran & Transaksi",
+    refund: "Manajemen Refund",
     notification: "Kelola Notifikasi",
     faq: "FAQ & Pusat Bantuan",
     users: "Profil Pengguna",
@@ -224,6 +252,7 @@ function App({
       { heading: "Administrasi Sistem", items: systemMenus },
     ],
     dashboardSummary,
+    records,
   );
   const menuResults = searchResults.filter((item) => item.type === "menu");
   const dataResults = searchResults.filter((item) => item.type === "data");
@@ -443,30 +472,6 @@ function App({
               <Menu size={22} />
             </button>
 
-            {/* BREADCRUMBS */}
-            <nav aria-label="Breadcrumb" className="hidden min-w-0 sm:block">
-              <ol className="flex items-center gap-2 text-sm">
-                <li className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => navigate("dashboard")}
-                    className="font-medium text-slate-500 transition hover:text-emerald-700"
-                  >
-                    Jelajah Topeng
-                  </button>
-                </li>
-                <li aria-hidden="true">
-                  <ChevronRight size={15} className="text-slate-300" />
-                </li>
-                <li
-                  aria-current="page"
-                  className="truncate font-semibold text-slate-900"
-                >
-                  {pageNames[page]}
-                </li>
-              </ol>
-            </nav>
-
             {/* RIGHT SIDE */}
             <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-4 lg:gap-5">
               {/* SEARCH GLOBAL */}
@@ -606,6 +611,30 @@ function App({
           ================================================= */}
 
           <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+            {/* BREADCRUMBS (di bawah topbar, atas judul halaman) */}
+            <nav aria-label="Breadcrumb" className="mb-4 sm:mb-6">
+              <ol className="flex flex-wrap items-center gap-2 text-sm">
+                <li className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate("dashboard")}
+                    className="font-medium text-slate-500 transition hover:text-emerald-700"
+                  >
+                    Jelajah Topeng
+                  </button>
+                </li>
+                <li aria-hidden="true">
+                  <ChevronRight size={16} className="text-slate-400" />
+                </li>
+                <li
+                  aria-current="page"
+                  className="font-semibold text-slate-900"
+                >
+                  {pageNames[page]}
+                </li>
+              </ol>
+            </nav>
+
             {page === "dashboard" && (
               <>
                 <Dashboard
@@ -626,6 +655,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.exploration}
               />
             )}
 
@@ -638,6 +668,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.panji}
               />
             )}
 
@@ -650,6 +681,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.materi}
               />
             )}
 
@@ -662,6 +694,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.booking}
               />
             )}
 
@@ -674,6 +707,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.progres}
               />
             )}
 
@@ -686,6 +720,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.ticketing}
               />
             )}
 
@@ -698,8 +733,11 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.payment}
               />
             )}
+
+            {page === "refund" && <RefundPage refunds={refunds} />}
 
             {page === "notification" && (
               <GenericPage
@@ -710,6 +748,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.notification}
               />
             )}
 
@@ -722,6 +761,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.faq}
               />
             )}
 
@@ -734,6 +774,7 @@ function App({
                 navigate={navigate}
                 query={globalQuery}
                 onQueryChange={setGlobalQuery}
+                records={records.users}
               />
             )}
 
@@ -1213,27 +1254,12 @@ function FavoriteCard({
 }
 
 // =============================================================
-// GENERIC PAGE
+// GENERIC PAGE: helper
 // =============================================================
 
-type DataRecord = {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  date: string;
-  amount: string;
-  status: string;
-  createdAt: string;
-  correctAnswer?: string;
-  correctClue?: string;
-  imageUrl?: string;
-  eventDate?: string;
-};
+type GenericPageKind = RecordKind;
 
-type DataDraft = Omit<DataRecord, "id" | "createdAt">;
-
-const EMPTY_DRAFT: DataDraft = {
+const EMPTY_DRAFT: RecordDraft = {
   name: "",
   description: "",
   location: "",
@@ -1245,48 +1271,6 @@ const EMPTY_DRAFT: DataDraft = {
   imageUrl: "",
   eventDate: "",
 };
-
-// ---------- Helper form: rekomendasi wilayah & validasi ----------
-
-const WILAYAH_SUGGESTIONS = [
-  "Polowijen",
-  "Blimbing",
-  "Lowokwaru",
-  "Klojen",
-  "Kedungkandang",
-  "Sukun",
-  "Kota Malang",
-  "Kabupaten Malang",
-];
-
-const LETTERS_ONLY = /^[\p{L}\s.,'’-]+$/u;
-
-// Validasi menyesuaikan label field, jadi semua halaman ikut otomatis.
-function validateField(label: string, raw: string): string {
-  const value = raw.trim();
-  if (!value) return "";
-  const l = label.toLowerCase();
-
-  if (
-    l.startsWith("nama") ||
-    ["maestro", "wilayah", "kategori", "penerima"].includes(l)
-  ) {
-    if (/\d/.test(value)) return `${label} tidak boleh mengandung angka`;
-    if (!LETTERS_ONLY.test(value)) return `${label} hanya boleh berisi huruf`;
-  }
-  if (l === "durasi" || l === "jumlah subbab") {
-    if (!/^\d+(\s*[a-z]+)?$/i.test(value)) {
-      return `${label} harus berupa angka (contoh: 90 menit)`;
-    }
-  }
-  if (l === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return "Format email tidak valid";
-  }
-  if ((l === "harga" || l === "jumlah") && !/\d/.test(value)) {
-    return `${label} harus berisi angka`;
-  }
-  return "";
-}
 
 function inputCls(size: string, error?: string) {
   return `mt-2 ${size} w-full rounded-lg border px-3 text-sm outline-none ${
@@ -1304,208 +1288,6 @@ function FieldError({ message }: { message?: string }) {
   ) : null;
 }
 
-type GenericPageKind = Exclude<Page, "login" | "dashboard" | "profile">;
-
-type ContentProfile = {
-  fields: [string, string, string, string, string];
-  statuses: string[];
-  records: DataDraft[];
-};
-
-// Labels and starter records follow the visitor journeys in the IA. The
-// existing page layout stays the same; only the meaning of its fields changes.
-const CONTENT_PROFILES: Record<GenericPageKind, ContentProfile> = {
-  exploration: {
-    fields: ["Nama lokasi", "Informasi", "Wilayah", "Tahun", "Catatan"],
-    statuses: ["Aktif", "Draft", "Nonaktif"],
-    records: [
-      {
-        name: "Makam Mbah Reni",
-        description: "Titik budaya untuk dijelajahi.",
-        location: "",
-        date: "",
-        amount: "",
-        status: "Aktif",
-      },
-    ],
-  },
-
-  panji: {
-    fields: ["Nama game", "Rincian game", "Jawaban benar", "Clue", "Gambar"],
-    statuses: ["Aktif"],
-    records: [],
-  },
-
-  materi: {
-    fields: [
-      "Judul materi",
-      "Ringkasan",
-      "Maestro",
-      "Jumlah subbab",
-      "Catatan",
-    ],
-    statuses: ["Tersedia", "Perlu dilengkapi"],
-    records: [
-      {
-        name: "Makam Mbah Reni",
-        description: "Materi budaya dengan 3 subbab.",
-        location: "Ki Sujono",
-        date: "",
-        amount: "3 subbab",
-        status: "Tersedia",
-      },
-      {
-        name: "Situs Sumur Windu",
-        description: "Materi budaya dengan 3 subbab.",
-        location: "Ki Sujono",
-        date: "",
-        amount: "3 subbab",
-        status: "Tersedia",
-      },
-      {
-        name: "Mandala Empu Purwa",
-        description: "Materi budaya dengan 3 subbab.",
-        location: "Ki Sujono",
-        date: "",
-        amount: "3 subbab",
-        status: "Tersedia",
-      },
-      {
-        name: "Situs Joko Lolo",
-        description: "Materi budaya dengan 3 subbab.",
-        location: "Ki Sujono",
-        date: "",
-        amount: "3 subbab",
-        status: "Tersedia",
-      },
-    ],
-  },
-
-  booking: {
-    fields: ["Nama sesi", "Informasi", "Tempat", "Durasi", "Catatan"],
-    statuses: ["Booking", "Perlu konfirmasi"],
-    records: [
-      {
-        name: "Booking Sesi Ki Sujono",
-        description: "Sesi bersama Ki Sujono.",
-        location: "Tempat Sanggar Topeng",
-        date: "",
-        amount: "90 menit",
-        status: "Booking",
-      },
-    ],
-  },
-
-  progres: {
-    fields: ["Nama peserta", "Progres", "Peringkat", "Tanggal", "Capaian"],
-    statuses: ["Peserta", "Belum ada data"],
-    records: [
-      {
-        name: "Raja Esa Abdilah",
-        description: "Progres belajar: 4 dari 5.",
-        location: "",
-        date: "",
-        amount: "4/5",
-        status: "Peserta",
-      },
-      {
-        name: "Jenri Setiawan Sitepu",
-        description: "Progres belajar: 2 dari 5.",
-        location: "",
-        date: "",
-        amount: "2/5",
-        status: "Peserta",
-      },
-      {
-        name: "Ardli Miftah",
-        description: "Progres belajar: 0 dari 5.",
-        location: "",
-        date: "",
-        amount: "0/5",
-        status: "Peserta",
-      },
-    ],
-  },
-
-  ticketing: {
-    fields: ["Nama paket", "Fasilitas", "Lokasi", "Tanggal", "Harga"],
-    statuses: ["Detail tersedia", "Detail belum tersedia"],
-    records: [
-      {
-        name: "Paket Sumbang Kampung",
-        description:
-          "Maksimal 30 orang. Termasuk pembelajaran budaya, tari/topeng tradisional, dokumentasi, demo batik/topeng, camilan, dan minuman. Tambahan makan Rp20.000/orang.",
-        location: "",
-        date: "",
-        amount: "Rp1.000.000 · tambahan peserta Rp25.000/orang",
-        status: "Detail tersedia",
-      },
-      {
-        name: "Paket Sobo Pawon",
-        description: "Informasi paket belum tersedia.",
-        location: "",
-        date: "",
-        amount: "",
-        status: "Detail belum tersedia",
-      },
-      {
-        name: "Paket Medayoh",
-        description: "Informasi paket belum tersedia.",
-        location: "",
-        date: "",
-        amount: "",
-        status: "Detail belum tersedia",
-      },
-      {
-        name: "Paket Selametan/Metri",
-        description: "Informasi paket belum tersedia.",
-        location: "",
-        date: "",
-        amount: "",
-        status: "Detail belum tersedia",
-      },
-      {
-        name: "Paket Hasfa Karya",
-        description: "Informasi paket belum tersedia.",
-        location: "",
-        date: "",
-        amount: "",
-        status: "Detail belum tersedia",
-      },
-    ],
-  },
-
-  payment: {
-    fields: ["Kode transaksi", "Rincian", "Lokasi", "Tanggal", "Jumlah"],
-    statuses: ["Belum ada data"],
-    records: [],
-  },
-
-  notification: {
-    fields: ["Judul", "Isi", "Penerima", "Tanggal", "Catatan"],
-    statuses: ["Belum ada data"],
-    records: [],
-  },
-
-  faq: {
-    fields: ["Pertanyaan", "Jawaban", "Kategori", "Tanggal", "Catatan"],
-    statuses: ["Belum ada data"],
-    records: [],
-  },
-
-  users: {
-    fields: [
-      "Nama pengguna",
-      "Informasi profil",
-      "Email",
-      "Tanggal",
-      "Catatan",
-    ],
-    statuses: ["Belum ada data"],
-    records: [],
-  },
-};
-
 // =============================================================
 // PENCARIAN GLOBAL: helper
 // =============================================================
@@ -1520,63 +1302,11 @@ type SearchResult = {
   query: string;
 };
 
-type StoredRecord = Pick<
-  DataRecord,
-  "id" | "name" | "description" | "location" | "date" | "amount" | "status"
->;
-
-// Membaca data tiap halaman dari localStorage (sama seperti GenericPage).
-function readStoredRecords(kind: GenericPageKind): StoredRecord[] {
-  const seeds = (): StoredRecord[] =>
-    CONTENT_PROFILES[kind].records.map((record, index) => ({
-      ...record,
-      id: `seed-${kind}-${index}`,
-    }));
-
-  try {
-    const saved = localStorage.getItem(`jelajah-topeng:content:${kind}`);
-    if (!saved) return seeds();
-    const parsed: unknown = JSON.parse(saved);
-    if (!Array.isArray(parsed)) return seeds();
-
-    return parsed.flatMap((item, index): StoredRecord[] => {
-      if (typeof item === "string") {
-        return [
-          {
-            id: `legacy-${index}`,
-            name: item,
-            description: "",
-            location: "",
-            date: "",
-            amount: "",
-            status: "Aktif",
-          },
-        ];
-      }
-      if (item && typeof item === "object" && typeof item.name === "string") {
-        return [
-          {
-            id: String(item.id ?? `saved-${index}`),
-            name: item.name,
-            description: String(item.description ?? ""),
-            location: String(item.location ?? ""),
-            date: String(item.date ?? ""),
-            amount: String(item.amount ?? ""),
-            status: String(item.status ?? ""),
-          },
-        ];
-      }
-      return [];
-    });
-  } catch {
-    return [];
-  }
-}
-
 function buildSearchResults(
   rawQuery: string,
   groups: { heading: string; items: { id: Page; label: string }[] }[],
   summary: DashboardSummary,
+  records: RecordsByKind,
 ): SearchResult[] {
   const q = rawQuery.trim().toLowerCase();
   if (q.length < 2) return [];
@@ -1610,11 +1340,10 @@ function buildSearchResults(
     }
   }
 
-  // 2) Isi data tiap halaman (dari localStorage)
-  const kinds = Object.keys(CONTENT_PROFILES) as GenericPageKind[];
+  // 2) Isi data tiap halaman (dari server)
   const dataResults: SearchResult[] = [];
-  for (const kind of kinds) {
-    for (const record of readStoredRecords(kind)) {
+  for (const kind of KINDS) {
+    for (const record of records[kind]) {
       const haystack = [
         record.name,
         record.description,
@@ -1673,6 +1402,10 @@ function buildSearchResults(
   return [...results, ...dataResults.slice(0, 8)];
 }
 
+// =============================================================
+// GENERIC PAGE
+// =============================================================
+
 function GenericPage({
   kind,
   title,
@@ -1681,6 +1414,7 @@ function GenericPage({
   navigate,
   query,
   onQueryChange,
+  records,
 }: {
   kind: GenericPageKind;
   title: string;
@@ -1689,6 +1423,7 @@ function GenericPage({
   navigate: (page: Page) => void;
   query: string;
   onQueryChange: (value: string) => void;
+  records: RecordDTO[];
 }) {
   const profile = CONTENT_PROFILES[kind];
   const toast = useToast();
@@ -1701,70 +1436,27 @@ function GenericPage({
     kind !== "panji" && !yearAsDate && !profile.fields.includes("Tanggal");
   const isDateInput = yearAsDate || profile.fields[3] === "Tanggal";
 
-  const storageKey = `jelajah-topeng:content:${kind}`;
-  const [items, setItems] = useState<DataRecord[]>(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      const parsed: unknown = saved ? JSON.parse(saved) : null;
-      if (Array.isArray(parsed)) {
-        return parsed.flatMap((item, index): DataRecord[] => {
-          if (typeof item === "string") {
-            return [
-              {
-                id: `legacy-${index}-${item}`,
-                name: item,
-                description: "Data kuratorial Jelajah Topeng",
-                location: "",
-                date: "",
-                amount: "",
-                status: "Aktif",
-                createdAt: new Date(0).toISOString(),
-              },
-            ];
-          }
-          if (
-            item &&
-            typeof item === "object" &&
-            "name" in item &&
-            typeof item.name === "string"
-          ) {
-            const record = item as Partial<DataRecord>;
-            return [
-              {
-                id: record.id ?? `saved-${index}-${record.name}`,
-                name: item.name,
-                description: record.description ?? "",
-                location: record.location ?? "",
-                date: record.date ?? "",
-                amount: record.amount ?? "",
-                status: record.status ?? "Aktif",
-                createdAt: record.createdAt ?? new Date(0).toISOString(),
-                correctAnswer: record.correctAnswer ?? "",
-                correctClue: record.correctClue ?? "",
-                imageUrl: record.imageUrl ?? "",
-                eventDate: record.eventDate ?? "",
-              },
-            ];
-          }
-          return [];
-        });
-      }
-      return profile.records.map((record, index) => ({
-        ...record,
-        id: `seed-${kind}-${index}`,
-        createdAt: new Date(0).toISOString(),
-      }));
-    } catch {
-      return [];
-    }
-  });
+  // Data berasal dari server (props). Setelah Server Action memanggil
+  // revalidatePath, props ini otomatis berganti tanpa refresh.
+  const items = records;
+
   const [sortAZ, setSortAZ] = useState(false);
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<DataDraft>(EMPTY_DRAFT);
-  const [selectedItem, setSelectedItem] = useState<DataRecord | null>(null);
+  const [draft, setDraft] = useState<RecordDraft>(EMPTY_DRAFT);
+  const [selectedItem, setSelectedItem] = useState<RecordDTO | null>(null);
   const [imageError, setImageError] = useState("");
+
+  // Hasil Server Action (useActionState): pesan error dari server + status loading
+  const [state, formAction, pending] = useActionState(
+    saveRecord,
+    {} as FormState,
+  );
+  const [serverErrors, setServerErrors] = useState<FieldErrors>({});
+  // Field yang sudah diubah sejak submit terakhir (error server-nya disembunyikan)
+  const [edited, setEdited] = useState<Record<string, boolean>>({});
+
   const pageSize = 3;
   const matchingItems = items
     .filter((item) =>
@@ -1781,7 +1473,7 @@ function GenericPage({
   const firstStatus = profile.statuses[0];
   const secondStatus = profile.statuses[1] ?? profile.statuses[0];
   // createdAt diperbarui setiap kali data ditambah atau diedit.
-  // Data lama/seed memakai epoch (1970), jadi tidak dianggap sebagai pembaruan.
+  // Data contoh memakai epoch (1970), jadi tidak dianggap sebagai pembaruan.
   const latestUpdate = items.reduce<string | undefined>((latest, item) => {
     const timestamp = Date.parse(item.createdAt);
     if (timestamp <= 0) return latest;
@@ -1804,83 +1496,65 @@ function GenericPage({
     currentPage * pageSize,
   );
 
-  // Validasi real-time: error merah muncul di bawah input saat mengetik.
-  const errors: Partial<
-    Record<"name" | "location" | "date" | "amount", string>
-  > =
-    kind === "panji"
-      ? {}
-      : {
-          name: validateField(profile.fields[0], draft.name),
-          location: validateField(profile.fields[2], draft.location),
-          date: validateField(profile.fields[3], draft.date),
-          amount: validateField(profile.fields[4], draft.amount),
-        };
-  const hasErrors = Object.values(errors).some(Boolean);
+  // ---- Validasi ----
+  // Aturan yang sama dengan server (lib/schemas.ts). Di klien dipakai untuk
+  // error merah langsung saat mengetik; server tetap memvalidasi ulang.
+  const allErrors = checkRecord(kind, draft);
+  const canSubmit = Object.keys(allErrors).length === 0;
 
-  function saveItems(nextItems: DataRecord[]): boolean {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(nextItems));
-      setItems(nextItems);
-      return true;
-    } catch {
-      toast.error("Gagal menyimpan data. Periksa ruang penyimpanan browser.");
-      return false;
-    }
+  function fieldError(key: FieldKey): string | undefined {
+    const live = allErrors[key];
+    const value = (draft[key] ?? "").trim();
+    if (live && value) return live; // error langsung saat sudah mengetik
+    if (!edited[key]) return serverErrors[key]?.[0]; // error dari server
+    return undefined;
   }
 
-  function handleSave(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const name = draft.name.trim();
-    if (!name) return;
-    if (hasErrors) {
-      toast.error("Gagal menyimpan data. Periksa isian yang berwarna merah.");
-      return;
-    }
-    if (
-      items.some(
-        (item) =>
-          item.name.toLowerCase() === name.toLowerCase() &&
-          item.id !== selectedItem?.id,
-      )
-    ) {
-      toast.error("Gagal menyimpan data. Data dengan nama tersebut sudah ada.");
-      return;
-    }
-    const now = new Date().toISOString();
-    const record: DataRecord = {
-      ...draft,
-      name,
-      description: draft.description.trim(),
-      location: draft.location.trim(),
-      amount: draft.amount.trim(),
-      correctAnswer: draft.correctAnswer?.trim() ?? "",
-      correctClue: draft.correctClue?.trim() ?? "",
-      imageUrl: draft.imageUrl ?? "",
-      eventDate: draft.eventDate ?? "",
-      id:
-        selectedItem?.id ??
-        `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      createdAt: now,
-    };
-    const ok = saveItems(
-      adding
-        ? [...items, record]
-        : items.map((item) => (item.id === record.id ? record : item)),
-    );
-    if (!ok) return;
-    toast.success(
-      adding ? "Data berhasil ditambahkan" : "Perubahan berhasil disimpan",
-    );
+  function setField(key: FieldKey, value: string) {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setEdited((current) => ({ ...current, [key]: true }));
+  }
+
+  function closeModal() {
     setAdding(false);
     setEditing(false);
     setSelectedItem(null);
     setDraft(EMPTY_DRAFT);
     setImageError("");
-    setPage(1);
+    setServerErrors({});
+    setEdited({});
   }
 
-  function openEdit(item: DataRecord) {
+  // Menanggapi hasil Server Action: toast + tutup modal / tampilkan error
+  useEffect(() => {
+    if (!state.ts) return;
+    if (state.ok) {
+      toast.success(state.message ?? "Data berhasil disimpan");
+      closeModal();
+      setPage(1);
+    } else {
+      setServerErrors(state.errors ?? {});
+      toast.error(state.message ?? "Gagal menyimpan data.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  function submitForm(formData: FormData) {
+    setEdited({});
+    formAction(formData);
+  }
+
+  function openAdd() {
+    setSelectedItem(null);
+    setEditing(false);
+    setDraft({ ...EMPTY_DRAFT, status: firstStatus });
+    setServerErrors({});
+    setEdited({});
+    setImageError("");
+    setAdding(true);
+  }
+
+  function openEdit(item: RecordDTO) {
     setSelectedItem(item);
     setDraft({
       name: item.name,
@@ -1889,21 +1563,15 @@ function GenericPage({
       date: item.date,
       amount: item.amount,
       status: item.status,
-      correctAnswer: item.correctAnswer ?? "",
-      correctClue: item.correctClue ?? "",
-      imageUrl: item.imageUrl ?? "",
-      eventDate: item.eventDate ?? "",
+      correctAnswer: item.correctAnswer,
+      correctClue: item.correctClue,
+      imageUrl: item.imageUrl,
+      eventDate: item.eventDate,
     });
+    setServerErrors({});
+    setEdited({});
     setAdding(false);
     setEditing(true);
-  }
-
-  function deleteSelected() {
-    if (!selectedItem) return;
-    if (!saveItems(items.filter((item) => item.id !== selectedItem.id))) return;
-    toast.success("Data berhasil dihapus");
-    setSelectedItem(null);
-    setEditing(false);
   }
 
   // ---- Field form (dipakai di layout grid maupun layout biasa) ----
@@ -1911,14 +1579,15 @@ function GenericPage({
     <label className="block text-sm font-medium text-slate-700">
       {profile.fields[2]}
       <input
+        name="location"
         list={profile.fields[2] === "Wilayah" ? "wilayah-list" : undefined}
         value={draft.location}
-        onChange={(e) => setDraft({ ...draft, location: e.target.value })}
+        onChange={(e) => setField("location", e.target.value)}
         placeholder={
           profile.fields[2] === "Wilayah" ? "Ketik atau pilih wilayah" : undefined
         }
-        aria-invalid={!!errors.location}
-        className={inputCls("h-10", errors.location)}
+        aria-invalid={!!fieldError("location")}
+        className={inputCls("h-10", fieldError("location"))}
       />
       {profile.fields[2] === "Wilayah" && (
         <datalist id="wilayah-list">
@@ -1927,7 +1596,7 @@ function GenericPage({
           ))}
         </datalist>
       )}
-      <FieldError message={errors.location} />
+      <FieldError message={fieldError("location")} />
     </label>
   );
 
@@ -1936,21 +1605,24 @@ function GenericPage({
       {dateLabel}
       {isDateInput ? (
         <input
+          name="date"
           type="date"
           value={draft.date}
-          onChange={(e) => setDraft({ ...draft, date: e.target.value })}
-          className={inputCls("h-10")}
+          onChange={(e) => setField("date", e.target.value)}
+          aria-invalid={!!fieldError("date")}
+          className={inputCls("h-10", fieldError("date"))}
         />
       ) : (
         <input
+          name="date"
           value={draft.date}
-          onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+          onChange={(e) => setField("date", e.target.value)}
           placeholder={profile.fields[3]}
-          aria-invalid={!!errors.date}
-          className={inputCls("h-10", errors.date)}
+          aria-invalid={!!fieldError("date")}
+          className={inputCls("h-10", fieldError("date"))}
         />
       )}
-      <FieldError message={errors.date} />
+      <FieldError message={fieldError("date")} />
     </label>
   );
 
@@ -1975,12 +1647,7 @@ function GenericPage({
         </div>
         <button
           type="button"
-          onClick={() => {
-            setSelectedItem(null);
-            setEditing(false);
-            setDraft({ ...EMPTY_DRAFT, status: firstStatus });
-            setAdding(true);
-          }}
+          onClick={openAdd}
           className="flex w-fit items-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 sm:px-5 sm:py-3 sm:text-sm"
         >
           + Tambah Data Baru
@@ -1991,7 +1658,7 @@ function GenericPage({
         <StatCard
           title="Total Data"
           value={String(items.length)}
-          subtitle="Data tersimpan di browser"
+          subtitle="Data tersimpan di server"
           icon={Grid2X2}
         />
         <StatCard
@@ -2030,7 +1697,7 @@ function GenericPage({
           <div>
             <h2 className="text-sm font-bold text-slate-900">Data {title}</h2>
             <p className="text-xs text-slate-400">
-              Data tersimpan di browser ini.
+              Data tersimpan di server.
             </p>
           </div>
           <div className="flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto">
@@ -2184,11 +1851,7 @@ function GenericPage({
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
           role="presentation"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              setAdding(false);
-              setEditing(false);
-              setSelectedItem(null);
-            }
+            if (e.target === e.currentTarget) closeModal();
           }}
         >
           <section
@@ -2208,72 +1871,85 @@ function GenericPage({
                   : "Detail Data"}
             </h2>
             {adding || editing ? (
-              <form onSubmit={handleSave} className="mt-4 space-y-4">
+              <form action={submitForm} className="mt-4 space-y-4">
+                <input type="hidden" name="kind" value={kind} />
+                <input
+                  type="hidden"
+                  name="id"
+                  value={editing ? (selectedItem?.id ?? "") : ""}
+                />
+
                 {kind === "panji" ? (
                   <>
                     <label className="block text-sm font-medium text-slate-700">
                       Nama game
                       <input
+                        name="name"
                         autoFocus
                         required
                         value={draft.name}
-                        onChange={(e) =>
-                          setDraft({ ...draft, name: e.target.value })
-                        }
+                        onChange={(e) => setField("name", e.target.value)}
                         placeholder="Contoh: Teka-teki Topeng Panji"
-                        className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                        aria-invalid={!!fieldError("name")}
+                        className={inputCls("h-11", fieldError("name"))}
                       />
+                      <FieldError message={fieldError("name")} />
                     </label>
                     <label className="block text-sm font-medium text-slate-700">
                       Rincian atau isi game
                       <textarea
-                        required
+                        name="description"
                         value={draft.description}
                         onChange={(e) =>
-                          setDraft({ ...draft, description: e.target.value })
+                          setField("description", e.target.value)
                         }
                         placeholder="Tuliskan cerita, pertanyaan, atau instruksi permainan"
                         rows={4}
-                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                        aria-invalid={!!fieldError("description")}
+                        className={`${inputCls("", fieldError("description"))} py-2`}
                       />
+                      <FieldError message={fieldError("description")} />
                     </label>
                     <label className="block text-sm font-medium text-slate-700">
                       Jawaban yang benar
                       <input
-                        required
-                        value={draft.correctAnswer ?? ""}
+                        name="correctAnswer"
+                        value={draft.correctAnswer}
                         onChange={(e) =>
-                          setDraft({ ...draft, correctAnswer: e.target.value })
+                          setField("correctAnswer", e.target.value)
                         }
                         placeholder="Masukkan jawaban yang benar"
-                        className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-emerald-600"
+                        aria-invalid={!!fieldError("correctAnswer")}
+                        className={inputCls("h-11", fieldError("correctAnswer"))}
                       />
+                      <FieldError message={fieldError("correctAnswer")} />
                     </label>
                     <label className="block text-sm font-medium text-slate-700">
                       Clue jika jawaban benar
                       <textarea
-                        required
-                        value={draft.correctClue ?? ""}
+                        name="correctClue"
+                        value={draft.correctClue}
                         onChange={(e) =>
-                          setDraft({ ...draft, correctClue: e.target.value })
+                          setField("correctClue", e.target.value)
                         }
                         placeholder="Petunjuk yang diberikan setelah pemain menjawab benar"
                         rows={3}
-                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                        aria-invalid={!!fieldError("correctClue")}
+                        className={`${inputCls("", fieldError("correctClue"))} py-2`}
                       />
+                      <FieldError message={fieldError("correctClue")} />
                     </label>
                     <label className="block text-sm font-medium text-slate-700">
                       Gambar yang relevan
                       <input
                         type="file"
                         accept="image/png,image/jpeg,image/webp,image/gif"
-                        required={!draft.imageUrl}
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          if (file.size > 900 * 1024) {
+                          if (file.size > 500 * 1024) {
                             setImageError(
-                              "Ukuran gambar maksimal 900 KB. Pilih gambar yang lebih kecil.",
+                              "Ukuran gambar maksimal 500 KB. Pilih gambar yang lebih kecil.",
                             );
                             e.target.value = "";
                             return;
@@ -2281,10 +1957,7 @@ function GenericPage({
                           setImageError("");
                           const reader = new FileReader();
                           reader.onload = () =>
-                            setDraft((current) => ({
-                              ...current,
-                              imageUrl: String(reader.result ?? ""),
-                            }));
+                            setField("imageUrl", String(reader.result ?? ""));
                           reader.onerror = () =>
                             setImageError(
                               "Gambar tidak dapat dibaca. Coba pilih file lain.",
@@ -2294,14 +1967,21 @@ function GenericPage({
                         className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                       />
                       <span className="mt-1 block text-xs font-normal text-slate-400">
-                        Format JPG, PNG, WEBP, atau GIF. Maksimal 900 KB.
+                        Format JPG, PNG, WEBP, atau GIF. Maksimal 500 KB.
                       </span>
                     </label>
+                    {/* Gambar dikirim ke server lewat input tersembunyi */}
+                    <input
+                      type="hidden"
+                      name="imageUrl"
+                      value={draft.imageUrl}
+                    />
                     {imageError && (
                       <p role="alert" className="text-sm text-red-600">
                         {imageError}
                       </p>
                     )}
+                    {!imageError && <FieldError message={fieldError("imageUrl")} />}
                     {draft.imageUrl && (
                       <div className="space-y-2">
                         <img
@@ -2312,7 +1992,7 @@ function GenericPage({
                         <button
                           type="button"
                           onClick={() => {
-                            setDraft({ ...draft, imageUrl: "" });
+                            setField("imageUrl", "");
                             setImageError("");
                           }}
                           className="text-sm font-medium text-red-600 hover:text-red-700"
@@ -2327,28 +2007,30 @@ function GenericPage({
                     <label className="block text-sm font-medium text-slate-700">
                       {profile.fields[0]}
                       <input
+                        name="name"
                         autoFocus
                         required
                         value={draft.name}
-                        onChange={(e) =>
-                          setDraft({ ...draft, name: e.target.value })
-                        }
-                        aria-invalid={!!errors.name}
-                        className={inputCls("h-11", errors.name)}
+                        onChange={(e) => setField("name", e.target.value)}
+                        aria-invalid={!!fieldError("name")}
+                        className={inputCls("h-11", fieldError("name"))}
                       />
-                      <FieldError message={errors.name} />
+                      <FieldError message={fieldError("name")} />
                     </label>
 
                     <label className="block text-sm font-medium text-slate-700">
                       {profile.fields[1]}
                       <textarea
+                        name="description"
                         value={draft.description}
                         onChange={(e) =>
-                          setDraft({ ...draft, description: e.target.value })
+                          setField("description", e.target.value)
                         }
                         rows={3}
-                        className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                        aria-invalid={!!fieldError("description")}
+                        className={`${inputCls("", fieldError("description"))} py-2`}
                       />
+                      <FieldError message={fieldError("description")} />
                     </label>
 
                     {yearAsDate ? (
@@ -2367,16 +2049,19 @@ function GenericPage({
                             <label className="block text-sm font-medium text-slate-700">
                               Tanggal
                               <input
+                                name="eventDate"
                                 type="date"
-                                value={draft.eventDate ?? ""}
+                                value={draft.eventDate}
                                 onChange={(e) =>
-                                  setDraft({
-                                    ...draft,
-                                    eventDate: e.target.value,
-                                  })
+                                  setField("eventDate", e.target.value)
                                 }
-                                className={inputCls("h-10")}
+                                aria-invalid={!!fieldError("eventDate")}
+                                className={inputCls(
+                                  "h-10",
+                                  fieldError("eventDate"),
+                                )}
                               />
+                              <FieldError message={fieldError("eventDate")} />
                             </label>
                           )}
                           {dateField}
@@ -2388,71 +2073,61 @@ function GenericPage({
                       {profile.fields[4]}
                       {profile.fields[4] === "Catatan" ? (
                         <textarea
+                          name="amount"
                           rows={5}
                           value={draft.amount}
-                          onChange={(e) =>
-                            setDraft({ ...draft, amount: e.target.value })
-                          }
+                          onChange={(e) => setField("amount", e.target.value)}
                           placeholder="Tulis catatan..."
-                          className="mt-2 w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                          aria-invalid={!!fieldError("amount")}
+                          className={`${inputCls("", fieldError("amount"))} resize-y py-2`}
                         />
                       ) : (
                         <input
+                          name="amount"
                           value={draft.amount}
-                          onChange={(e) =>
-                            setDraft({ ...draft, amount: e.target.value })
-                          }
+                          onChange={(e) => setField("amount", e.target.value)}
                           placeholder={profile.fields[4]}
-                          aria-invalid={!!errors.amount}
-                          className={inputCls("h-10", errors.amount)}
+                          aria-invalid={!!fieldError("amount")}
+                          className={inputCls("h-10", fieldError("amount"))}
                         />
                       )}
-                      <FieldError message={errors.amount} />
+                      <FieldError message={fieldError("amount")} />
                     </label>
 
                     <label className="block text-sm font-medium text-slate-700">
                       Status
                       <select
+                        name="status"
                         value={draft.status}
-                        onChange={(e) =>
-                          setDraft({ ...draft, status: e.target.value })
-                        }
+                        onChange={(e) => setField("status", e.target.value)}
                         className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-emerald-600"
                       >
                         {profile.statuses.map((status) => (
                           <option key={status}>{status}</option>
                         ))}
                       </select>
+                      <FieldError message={fieldError("status")} />
                     </label>
                   </>
                 )}
                 <div className="flex justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setAdding(false);
-                      setEditing(false);
-                      setSelectedItem(null);
-                      setDraft(EMPTY_DRAFT);
-                      setImageError("");
-                    }}
+                    onClick={closeModal}
                     className="rounded-lg border border-slate-200 px-4 py-2 text-sm"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
-                    disabled={
-                      !draft.name.trim() ||
-                      hasErrors ||
-                      (kind === "panji" &&
-                        (!draft.correctAnswer?.trim() ||
-                          !draft.correctClue?.trim() ||
-                          !draft.imageUrl))
-                    }
+                    disabled={!canSubmit || pending}
                     className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                   >
-                    {editing ? "Simpan Perubahan" : "Simpan"}
+                    {pending
+                      ? "Menyimpan..."
+                      : editing
+                        ? "Simpan Perubahan"
+                        : "Simpan"}
                   </button>
                 </div>
               </form>
@@ -2557,13 +2232,13 @@ function GenericPage({
                   </dl>
                 )}
                 <div className="mt-6 flex justify-between">
-                  <button
-                    type="button"
-                    onClick={deleteSelected}
-                    className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 size={15} /> Hapus
-                  </button>
+                  {selectedItem && (
+                    <DeleteRecordButton
+                      kind={kind}
+                      id={selectedItem.id}
+                      onDone={closeModal}
+                    />
+                  )}
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -2587,6 +2262,49 @@ function GenericPage({
         </div>
       )}
     </div>
+  );
+}
+
+// =============================================================
+// TOMBOL HAPUS: Server Action + .bind() (kind & id dititipkan)
+// =============================================================
+
+function DeleteRecordButton({
+  kind,
+  id,
+  onDone,
+}: {
+  kind: GenericPageKind;
+  id: string;
+  onDone: () => void;
+}) {
+  const toast = useToast();
+  const [state, deleteAction, pending] = useActionState(
+    deleteRecord.bind(null, kind, id),
+    {} as FormState,
+  );
+
+  useEffect(() => {
+    if (!state.ts) return;
+    if (state.ok) {
+      toast.success(state.message ?? "Data berhasil dihapus");
+      onDone();
+    } else {
+      toast.error(state.message ?? "Gagal menghapus data.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
+  return (
+    <form action={deleteAction}>
+      <button
+        type="submit"
+        disabled={pending}
+        className="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+      >
+        <Trash2 size={15} /> {pending ? "Menghapus..." : "Hapus"}
+      </button>
+    </form>
   );
 }
 
