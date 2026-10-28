@@ -1,10 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
-  partialPrefetching: true,
-  turbopack: { root: process.cwd() },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+    ],
+  },
+  experimental: {
+    serverActions: { bodySizeLimit: "5mb" },
+  },
 };
 
 export default nextConfig;

@@ -1,82 +1,21 @@
 import "server-only";
-import type { ContentRecord } from "@prisma/client";
-import { db } from "@/lib/db";
+import { del } from "@vercel/blob";
+import { apiFetch, ApiError } from "@/lib/api";
 import {
-  CONTENT_PROFILES,
-  KINDS,
-  emptyRecords,
   type RecordDTO,
   type RecordDraft,
   type RecordKind,
   type RecordsByKind,
 } from "@/lib/content-config";
 
-function toDTO(r: ContentRecord): RecordDTO {
-  return {
-    id: r.id,
-    name: r.name,
-    description: r.description,
-    location: r.location,
-    date: r.date,
-    amount: r.amount,
-    status: r.status,
-    createdAt: r.createdAt.toISOString(),
-    correctAnswer: r.correctAnswer,
-    correctClue: r.correctClue,
-    imageUrl: r.imageUrl,
-    eventDate: r.eventDate,
-  };
-}
+const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//i;
 
-// Data contoh dimasukkan sekali per user per halaman.
-async function ensureSeeded(userId: string) {
-  const done = await db.seededKind.findMany({ where: { userId } });
-  const doneKinds = new Set(done.map((d) => d.kind));
-  const todo = KINDS.filter((kind) => !doneKinds.has(kind));
-  if (todo.length === 0) return;
-
-  try {
-    await db.$transaction([
-      db.seededKind.createMany({
-        data: todo.map((kind) => ({ userId, kind })),
-      }),
-      db.contentRecord.createMany({
-        data: todo.flatMap((kind) =>
-          CONTENT_PROFILES[kind].records.map((seed) => ({
-            userId,
-            kind,
-            name: seed.name,
-            description: seed.description,
-            location: seed.location,
-            date: seed.date,
-            amount: seed.amount,
-            status: seed.status,
-            createdAt: new Date(0),
-          })),
-        ),
-      }),
-    ]);
-  } catch {
-    // Request paralel lain sudah melakukan seed; aman diabaikan.
-  }
+async function deleteBlob(url: string) {
+  if (url && BLOB_URL_RE.test(url)) await del(url);
 }
 
 export async function getRecordsDTO(userId: string): Promise<RecordsByKind> {
-  await ensureSeeded(userId);
-
-  // Hanya data milik user ini yang diambil.
-  const rows = await db.contentRecord.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const result = emptyRecords();
-  for (const row of rows) {
-    if ((KINDS as readonly string[]).includes(row.kind)) {
-      result[row.kind as RecordKind].push(toDTO(row));
-    }
-  }
-  return result;
+  return apiFetch<RecordsByKind>("/records", userId);
 }
 
 export async function nameExists(
@@ -85,13 +24,10 @@ export async function nameExists(
   name: string,
   exceptId?: string,
 ): Promise<boolean> {
+  const all = await getRecordsDTO(userId);
   const wanted = name.trim().toLowerCase();
-  const rows = await db.contentRecord.findMany({
-    where: { userId, kind },
-    select: { id: true, name: true },
-  });
-  return rows.some(
-    (r) => r.id !== exceptId && r.name.trim().toLowerCase() === wanted,
+  return all[kind].some(
+    (r: RecordDTO) => r.id !== exceptId && r.name.trim().toLowerCase() === wanted,
   );
 }
 
@@ -100,34 +36,61 @@ export async function insertRecord(
   kind: RecordKind,
   values: RecordDraft,
 ) {
-  await db.contentRecord.create({
-    data: { ...values, userId, kind },
+  await apiFetch<RecordDTO>("/records", userId, {
+    method: "POST",
+    body: JSON.stringify({ ...values, kind }),
   });
 }
 
-// Cegah IDOR: `userId` ikut di klausa where, jadi data milik user lain
-// tidak akan pernah cocok. Mengembalikan false jika tidak ada yang berubah.
+// Mengembalikan false kalau data tidak ditemukan / bukan milik user (404 dari BE).
 export async function updateRecord(
   userId: string,
   kind: RecordKind,
   id: string,
   values: RecordDraft,
 ): Promise<boolean> {
-  const result = await db.contentRecord.updateMany({
-    where: { id, kind, userId },
-    data: { ...values, createdAt: new Date() },
-  });
-  return result.count > 0;
+  const before = (await getRecordsDTO(userId))[kind].find((r) => r.id === id);
+
+  try {
+    await apiFetch<RecordDTO>(`/records/${encodeURIComponent(id)}`, userId, {
+      method: "PUT",
+      body: JSON.stringify({ ...values, kind }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return false;
+    throw error;
+  }
+
+  // Gambar diganti: file lama di Blob dibuang supaya tidak jadi orphan file.
+  if (before?.imageUrl && before.imageUrl !== values.imageUrl) {
+    try {
+      await deleteBlob(before.imageUrl);
+    } catch {
+      // data sudah tersimpan; gagal hapus file lama tidak membatalkan edit
+    }
+  }
+  return true;
 }
 
-// Cegah IDOR: hanya pemilik (userId) yang bisa menghapus.
 export async function removeRecord(
   userId: string,
   kind: RecordKind,
   id: string,
 ): Promise<boolean> {
-  const result = await db.contentRecord.deleteMany({
-    where: { id, kind, userId },
-  });
-  return result.count > 0;
+  const record = (await getRecordsDTO(userId))[kind].find((r) => r.id === id);
+  if (!record) return false; // tidak ada / bukan milik user ini
+
+  // 1. Hapus file fisik di Vercel Blob TERLEBIH DAHULU
+  await deleteBlob(record.imageUrl);
+
+  // 2. Baru hapus baris datanya di database (lewat BE)
+  try {
+    await apiFetch(`/records/${encodeURIComponent(id)}`, userId, {
+      method: "DELETE",
+    });
+    return true;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return false;
+    throw error;
+  }
 }

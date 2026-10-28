@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { signOutAction } from "@/app/actions/auth";
+import ConfirmLogout from "@/components/ConfirmLogout";
 import { deleteRecord, saveRecord } from "@/app/actions/records";
 import type { DashboardSummary } from "@/lib/dal";
 import {
@@ -51,6 +51,9 @@ import logo from "@/assets/logo-jelajah-topeng.png";
 import AdminActionButton from "@/components/AdminActionButton";
 import RefundPage from "@/components/RefundPage";
 import { useToast } from "@/components/ToastProvider";
+import ImageUploadField from "@/components/ImageUploadField";
+import NextImage from "next/image";
+import DateLimiter from "@/components/DateLimiter";
 import type { RefundDTO } from "@/lib/refund-schema";
 
 type Page =
@@ -133,14 +136,9 @@ function App({
             Akun {userEmail} sudah terautentikasi, tetapi tidak memiliki peran
             admin. Data dashboard tidak dikirim ke akun ini.
           </p>
-          <form action={signOutAction} className="mt-6">
-            <button
-              type="submit"
-              className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
-            >
+          <div className="mt-6"><ConfirmLogout className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">
               Keluar
-            </button>
-          </form>
+            </ConfirmLogout></div>
         </section>
       </main>
     );
@@ -269,6 +267,7 @@ function App({
 
   return (
     <div className="min-h-screen bg-[#f7f9fc] text-slate-900">
+      <DateLimiter />
       <div className="flex min-h-screen">
         {/* =====================================================
             SIDEBAR
@@ -420,15 +419,10 @@ function App({
                   <span>Pengaturan</span>
                 </button>
 
-                <form action={signOutAction}>
-                  <button
-                    type="submit"
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
-                  >
+                <div><ConfirmLogout className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50">
                     <LogOut size={19} strokeWidth={1.8} />
                     <span>Logout</span>
-                  </button>
-                </form>
+                  </ConfirmLogout></div>
               </div>
             </div>
           </div>
@@ -593,16 +587,10 @@ function App({
               <div className="hidden h-7 w-px bg-slate-200 lg:block" />
 
               {/* LOGOUT (desktop saja) */}
-              <form action={signOutAction} className="hidden lg:block">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-                  title="Logout"
-                >
+              <div className="hidden lg:block"><ConfirmLogout className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600">
                   <LogOut size={18} />
                   <span>Logout</span>
-                </button>
-              </form>
+                </ConfirmLogout></div>
             </div>
           </header>
 
@@ -1939,37 +1927,10 @@ function GenericPage({
                       />
                       <FieldError message={fieldError("correctClue")} />
                     </label>
-                    <label className="block text-sm font-medium text-slate-700">
-                      Gambar yang relevan
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp,image/gif"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          if (file.size > 500 * 1024) {
-                            setImageError(
-                              "Ukuran gambar maksimal 500 KB. Pilih gambar yang lebih kecil.",
-                            );
-                            e.target.value = "";
-                            return;
-                          }
-                          setImageError("");
-                          const reader = new FileReader();
-                          reader.onload = () =>
-                            setField("imageUrl", String(reader.result ?? ""));
-                          reader.onerror = () =>
-                            setImageError(
-                              "Gambar tidak dapat dibaca. Coba pilih file lain.",
-                            );
-                          reader.readAsDataURL(file);
-                        }}
-                        className="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                      />
-                      <span className="mt-1 block text-xs font-normal text-slate-400">
-                        Format JPG, PNG, WEBP, atau GIF. Maksimal 500 KB.
-                      </span>
-                    </label>
+                    <ImageUploadField
+                      value={draft.imageUrl}
+                      onChange={(url) => setField("imageUrl", url)}
+                    />
                     {/* Gambar dikirim ke server lewat input tersembunyi */}
                     <input
                       type="hidden"
@@ -1982,25 +1943,7 @@ function GenericPage({
                       </p>
                     )}
                     {!imageError && <FieldError message={fieldError("imageUrl")} />}
-                    {draft.imageUrl && (
-                      <div className="space-y-2">
-                        <img
-                          src={draft.imageUrl}
-                          alt="Pratinjau gambar game"
-                          className="max-h-52 w-full rounded-xl border border-slate-200 object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setField("imageUrl", "");
-                            setImageError("");
-                          }}
-                          className="text-sm font-medium text-red-600 hover:text-red-700"
-                        >
-                          Hapus gambar
-                        </button>
-                      </div>
-                    )}
+                    
                   </>
                 ) : (
                   <>
@@ -2136,9 +2079,11 @@ function GenericPage({
                 {kind === "panji" ? (
                   <div className="mt-5 space-y-4 text-sm">
                     {selectedItem?.imageUrl && (
-                      <img
+                      <NextImage
                         src={selectedItem.imageUrl}
-                        alt={`Gambar ${selectedItem.name}`}
+                        alt={"Gambar " + selectedItem.name}
+                        width={640}
+                        height={360}
                         className="max-h-64 w-full rounded-xl border border-slate-200 object-cover"
                       />
                     )}
@@ -2510,15 +2455,10 @@ function ProfilePage({
         </div>
       </section>
 
-      <form action={signOutAction}>
-        <button
-          type="submit"
-          className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
-        >
+      <div><ConfirmLogout className="mt-6 flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-600 hover:bg-red-50">
           <LogOut size={17} />
           Keluar
-        </button>
-      </form>
+        </ConfirmLogout></div>
     </div>
   );
 }

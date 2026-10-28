@@ -22,7 +22,29 @@ type Values = Partial<Record<FieldKey, string>>;
 
 const LETTERS_ONLY = /^[\p{L}\s.,'’-]+$/u;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const MAX_IMAGE_LENGTH = 800_000; // karakter data-URL (batas body Server Action ±1 MB)
+const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/.+/i;
+const MAX_IMAGE_URL_LENGTH = 500;
+
+// Tanggal hari ini (WIB) format YYYY-MM-DD, dengan geser hari opsional.
+function todayWib(offsetDays = 0): string {
+  const d = new Date(Date.now() + offsetDays * 86_400_000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(d);
+}
+
+function isRealDate(value: string): boolean {
+  if (!DATE_RE.test(value)) return false;
+  const d = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
+// Kalender: hanya hari ini sampai 7 hari ke depan, tidak boleh ke belakang.
+function validateNextWeek(value: string): string {
+  if (!value) return "";
+  if (!isRealDate(value)) return "Tanggal tidak valid";
+  if (value < todayWib(0)) return "Tanggal tidak boleh sebelum hari ini";
+  if (value > todayWib(7)) return "Tanggal maksimal 7 hari dari hari ini";
+  return "";
+}
 
 // Aturan tambahan yang mengikuti label field tiap halaman.
 function validateByLabel(label: string, raw: string): string {
@@ -82,13 +104,19 @@ export function checkRecord(
 
   if (kind === "panji") {
     if (!get("description")) errors.description = `${f[1]} wajib diisi`;
-    if (!get("correctAnswer")) errors.correctAnswer = "Jawaban yang benar wajib diisi";
-    if (!get("correctClue")) errors.correctClue = "Clue wajib diisi";
+
+    const answer = get("correctAnswer");
+    if (!answer) errors.correctAnswer = "Jawaban yang benar wajib diisi";
+    else if (answer.length > 200) errors.correctAnswer = "Jawaban maksimal 200 karakter";
+
+    const clue = get("correctClue");
+    if (!clue) errors.correctClue = "Clue wajib diisi";
+    else if (clue.length > 1000) errors.correctClue = "Clue maksimal 1000 karakter";
 
     const image = get("imageUrl");
     if (!image) errors.imageUrl = "Gambar wajib diunggah";
-    else if (!image.startsWith("data:image/")) errors.imageUrl = "File gambar tidak valid";
-    else if (image.length > MAX_IMAGE_LENGTH) errors.imageUrl = "Ukuran gambar terlalu besar";
+    else if (!BLOB_URL_RE.test(image)) errors.imageUrl = "URL gambar tidak valid";
+    else if (image.length > MAX_IMAGE_URL_LENGTH) errors.imageUrl = "URL gambar terlalu panjang";
     return errors;
   }
 
@@ -100,17 +128,21 @@ export function checkRecord(
     if (message) errors.location = message;
   }
 
-  const isDateField = f[3] === "Tahun" || f[3] === "Tanggal";
   const date = get("date");
-  if (isDateField) {
-    if (date && !DATE_RE.test(date)) errors.date = "Tanggal tidak valid";
+  if (f[3] === "Tanggal") {
+    // Kalender jadwal: hari ini sampai 7 hari ke depan.
+    const message = validateNextWeek(date);
+    if (message) errors.date = message;
+  } else if (f[3] === "Tahun") {
+    // Tahun situs bersejarah: boleh masa lalu, hanya cek format.
+    if (date && !isRealDate(date)) errors.date = "Tanggal tidak valid";
   } else {
     const message = validateByLabel(f[3], date);
     if (message) errors.date = message;
   }
 
-  const eventDate = get("eventDate");
-  if (eventDate && !DATE_RE.test(eventDate)) errors.eventDate = "Tanggal tidak valid";
+  const eventDateError = validateNextWeek(get("eventDate"));
+  if (eventDateError) errors.eventDate = eventDateError;
 
   const amount = get("amount");
   if (amount.length > 1000) errors.amount = `${f[4]} maksimal 1000 karakter`;
@@ -153,7 +185,6 @@ export const recordSchema = z
   });
 
 // Mengubah daftar issue Zod menjadi { namaField: [pesan, ...] }
-// (setara result.error.flatten().fieldErrors di materi).
 export function fieldErrorsFromIssues(
   issues: ReadonlyArray<{ path: ReadonlyArray<PropertyKey>; message: string }>,
 ): FieldErrors {
