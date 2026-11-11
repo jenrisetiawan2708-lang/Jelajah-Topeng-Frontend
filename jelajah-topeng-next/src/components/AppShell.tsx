@@ -51,6 +51,7 @@ import logo from "@/assets/logo-jelajah-topeng.png";
 import AdminActionButton from "@/components/AdminActionButton";
 import RefundPage from "@/components/RefundPage";
 import { useToast } from "@/components/ToastProvider";
+import PaymentPanel from "@/components/PaymentPanel";
 import ImageUploadField from "@/components/ImageUploadField";
 import NextImage from "next/image";
 import DateLimiter from "@/components/DateLimiter";
@@ -713,7 +714,9 @@ function App({
             )}
 
             {page === "payment" && (
-              <GenericPage
+              <div className="space-y-8">
+                <PaymentPanel />
+                <GenericPage
                 kind="payment"
                 title="Checkout & Pembayaran"
                 description={PAGE_DESCRIPTIONS.payment}
@@ -723,6 +726,7 @@ function App({
                 onQueryChange={setGlobalQuery}
                 records={records.payment}
               />
+              </div>
             )}
 
             {page === "refund" && <RefundPage refunds={refunds} />}
