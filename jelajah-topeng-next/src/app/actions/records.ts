@@ -90,7 +90,7 @@ export async function saveRecord(
   }
 
   // 3) REVALIDASI: tampilan langsung diperbarui tanpa refresh
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
 
   return {
     ok: true,
@@ -124,6 +124,6 @@ export async function deleteRecord(
     };
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return { ok: true, message: "Data berhasil dihapus", ts: Date.now() };
 }

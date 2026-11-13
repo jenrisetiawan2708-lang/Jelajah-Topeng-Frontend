@@ -35,7 +35,7 @@ export async function refreshPaymentStatus(orderId: string): Promise<PaymentResu
   if (user.role !== "admin") return { ok: false, error: FORBIDDEN };
   try {
     const data = await syncPayment(user.id, orderId);
-    revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
     return { ok: true, data };
   } catch (error) {
     return fail(error);
@@ -47,7 +47,7 @@ export async function removePayment(orderId: string): Promise<PaymentResult<{ or
   if (user.role !== "admin") return { ok: false, error: FORBIDDEN };
   try {
     const data = await deletePayment(user.id, orderId);
-    revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
     return { ok: true, data };
   } catch (error) {
     return fail(error);
