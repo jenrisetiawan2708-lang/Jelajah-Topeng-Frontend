@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "../../auth";
+import { apiFetch } from "@/lib/api";
 
 export class AuthorizationError extends Error {
   readonly code = "FORBIDDEN" as const;
@@ -56,49 +57,27 @@ export type DashboardSummary = {
   }>;
 };
 
-// Wireframe tidak menyediakan angka kunjungan, transaksi, tiket,
-// atau pendapatan yang dapat dipakai untuk ringkasan admin.
-const wireframeSummary: DashboardSummary = {
-  visits: 0,
-  verifiedTickets: 0,
-  activeSessions: 0,
-  revenue: 0,
-  transactions: [],
-  masterclasses: [
-    {
-      time: "22 Oktober 2026 · 14.00 WIB",
-      title: "Latihan Tari Topeng: Gerakan Dasar",
-      maestro: "Belum dicantumkan",
-      place: "Belum dicantumkan",
-    },
-    {
-      time: "20 Oktober 2026",
-      title: "Pertunjukan Malam Maestro",
-      maestro: "Belum dicantumkan",
-      place: "Kampung Budaya Polowijen",
-    },
-  ],
-};
-
-const limitedUserSummary: DashboardSummary = {
+const emptySummary = (): DashboardSummary => ({
   visits: 0,
   verifiedTickets: 0,
   activeSessions: 0,
   revenue: 0,
   transactions: [],
   masterclasses: [],
-};
+});
 
+// Angka ringkasan dihitung oleh BE dari database (GET /api/dashboard).
 export async function getDashboardSummaryDTO(): Promise<DashboardSummary> {
   const user = await verifySession();
 
   if (user.role !== "admin") {
-    return { ...limitedUserSummary };
+    return emptySummary();
   }
 
-  return {
-    ...wireframeSummary,
-    transactions: [...wireframeSummary.transactions],
-    masterclasses: [...wireframeSummary.masterclasses],
-  };
+  try {
+    return await apiFetch<DashboardSummary>("/dashboard", user.id);
+  } catch (error) {
+    console.error("Gagal mengambil ringkasan dashboard:", error);
+    return emptySummary();
+  }
 }

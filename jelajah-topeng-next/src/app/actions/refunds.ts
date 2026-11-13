@@ -57,7 +57,7 @@ export async function decideRefund(
   }
 
   // Tampilan langsung diperbarui tanpa refresh
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   return {
     ok: true,
     message:
