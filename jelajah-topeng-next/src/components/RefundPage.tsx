@@ -17,6 +17,7 @@ import { decideRefund } from "@/app/actions/refunds";
 import type { FormState } from "@/lib/content-config";
 import { checkRefundReason, type RefundDTO } from "@/lib/refund-schema";
 import { useToast } from "@/components/ToastProvider";
+import PageHeader from "@/components/ui/PageHeader";
 
 const PAGE_SIZE = 5;
 
@@ -159,27 +160,19 @@ export default function RefundPage({ refunds }: { refunds: RefundDTO[] }) {
   return (
     <div>
       {/* HEADER */}
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            Manajemen Refund
-          </span>
-          <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Manajemen Refund
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Pantau pengajuan refund, verifikasi bukti, dan catat status
-            penyelesaian refund tiket budaya.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => exportCsv(filtered)}
-          className="flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
-        >
-          <Download size={16} /> Ekspor Laporan
-        </button>
-      </div>
+      <PageHeader
+        title="Manajemen Refund"
+        description="Pantau pengajuan refund, verifikasi bukti, dan catat status penyelesaian refund tiket budaya."
+        actions={
+          <button
+            type="button"
+            onClick={() => exportCsv(filtered)}
+            className="flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50"
+          >
+            <Download size={16} /> Ekspor Laporan
+          </button>
+        }
+      />
 
       {/* FILTER */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
