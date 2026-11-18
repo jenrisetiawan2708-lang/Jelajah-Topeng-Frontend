@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Eye, Grid2X2, Pencil, Search, ShieldCheck, TrendingUp } from "lucide-react";
+import { ChevronRight, ExternalLink, Eye, Grid2X2, Pencil, Search, ShieldCheck, TrendingUp } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import StatCard from "@/components/ui/StatCard";
 import RecordForm from "@/components/records/RecordForm";
@@ -210,6 +210,14 @@ export default function RecordPage({
                 >
                   {item.status}
                 </span>
+                {/* Baru: tautan ke halaman detail dinamis /[id] */}
+                <Link
+                  href={`${MENU_BY_ID[kind].href}/${item.id}`}
+                  aria-label={`Buka halaman ${item.name}`}
+                  className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
+                >
+                  <ExternalLink size={16} />
+                </Link>
                 <button
                   type="button"
                   aria-label={`Lihat ${item.name}`}
