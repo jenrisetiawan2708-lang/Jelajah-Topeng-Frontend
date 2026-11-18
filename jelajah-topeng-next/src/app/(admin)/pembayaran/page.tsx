@@ -8,8 +8,9 @@ export default function PembayaranPage({
 }) {
   return (
     <div className="space-y-8">
-      <PaymentPanel />
+      {/* Header + statistik + daftar data dulu, supaya bagian atas sama dengan halaman lain */}
       <RecordRoute kind="payment" searchParams={searchParams} />
+      <PaymentPanel />
     </div>
   );
 }
