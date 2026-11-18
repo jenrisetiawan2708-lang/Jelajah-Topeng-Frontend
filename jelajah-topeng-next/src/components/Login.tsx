@@ -2,9 +2,12 @@
 
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, Loader2, LockKeyhole } from "lucide-react";
 import logo from "@/assets/logo-jelajah-topeng.png";
+import { loginSchema, type LoginValues } from "@/lib/auth-schema";
 
 function GoogleIcon() {
   return (
@@ -17,22 +20,30 @@ function GoogleIcon() {
   );
 }
 
+const inputClass =
+  "h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100 aria-[invalid=true]:border-red-400";
+
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  // React Hook Form + skema Zod (validasi jalan di klien sebelum request dikirim)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  async function onSubmit(values: LoginValues) {
     setError("");
-    setLoading(true);
     try {
       const result = await signIn("credentials", {
-        email: email.trim().toLowerCase(),
-        password,
+        email: values.email.toLowerCase(),
+        password: values.password,
         redirect: false,
       });
       if (result?.error) {
@@ -43,8 +54,6 @@ export default function Login() {
       router.refresh();
     } catch {
       setError("Login gagal. Periksa konfigurasi autentikasi lalu coba lagi.");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -59,7 +68,7 @@ export default function Login() {
     }
   }
 
-  const busy = loading || googleLoading;
+  const busy = isSubmitting || googleLoading;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
@@ -82,41 +91,43 @@ export default function Login() {
           <p role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
         )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div>
             <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700">Email</label>
             <input
               id="email"
-              name="email"
               type="email"
               autoComplete="username"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               placeholder="nama@email.com"
+              aria-invalid={errors.email ? "true" : "false"}
+              className={inputClass}
+              {...register("email")}
             />
+            {errors.email && (
+              <p role="alert" className="mt-1.5 text-xs text-red-600">{errors.email.message}</p>
+            )}
           </div>
           <div>
             <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700">Kata sandi</label>
             <input
               id="password"
-              name="password"
               type="password"
               autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               placeholder="Masukkan kata sandi"
+              aria-invalid={errors.password ? "true" : "false"}
+              className={inputClass}
+              {...register("password")}
             />
+            {errors.password && (
+              <p role="alert" className="mt-1.5 text-xs text-red-600">{errors.password.message}</p>
+            )}
           </div>
           <button
             type="submit"
             disabled={busy}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : <><LockKeyhole size={17} /> Masuk dengan email <ArrowRight size={17} /></>}
+            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <><LockKeyhole size={17} /> Masuk dengan email <ArrowRight size={17} /></>}
           </button>
         </form>
 
