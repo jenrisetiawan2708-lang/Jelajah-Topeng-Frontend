@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, Loader2, LockKeyhole } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole } from "lucide-react";
 import logo from "@/assets/logo-jelajah-topeng.png";
 import { loginSchema, type LoginValues } from "@/lib/auth-schema";
 
@@ -27,6 +27,7 @@ export default function Login() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // React Hook Form + skema Zod (validasi jalan di klien sebelum request dikirim)
   const {
@@ -109,15 +110,26 @@ export default function Login() {
           </div>
           <div>
             <label htmlFor="password" className="mb-2 block text-sm font-semibold text-slate-700">Kata sandi</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Masukkan kata sandi"
-              aria-invalid={errors.password ? "true" : "false"}
-              className={inputClass}
-              {...register("password")}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Masukkan kata sandi"
+                aria-invalid={errors.password ? "true" : "false"}
+                className={`${inputClass} pr-12`}
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                aria-pressed={showPassword}
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-400 hover:text-emerald-700"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.password && (
               <p role="alert" className="mt-1.5 text-xs text-red-600">{errors.password.message}</p>
             )}
