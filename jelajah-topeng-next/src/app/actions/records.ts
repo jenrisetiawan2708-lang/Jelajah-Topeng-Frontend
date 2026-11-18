@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache"; // BARU: updateTag
 import { verifySession } from "@/lib/dal";
 import {
   CONTENT_PROFILES,
@@ -91,6 +91,7 @@ export async function saveRecord(
 
   // 3) REVALIDASI: tampilan langsung diperbarui tanpa refresh
   revalidatePath("/", "layout");
+  updateTag(`summary-${user.id}`); // BARU: bersihkan cache ringkasan dashboard
 
   return {
     ok: true,
@@ -125,5 +126,6 @@ export async function deleteRecord(
   }
 
   revalidatePath("/", "layout");
+  updateTag(`summary-${user.id}`); // BARU: bersihkan cache ringkasan dashboard
   return { ok: true, message: "Data berhasil dihapus", ts: Date.now() };
 }
