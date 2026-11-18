@@ -1,4 +1,3 @@
-
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
@@ -107,18 +106,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
     authorized({ auth: session, request }) {
       const pathname = request.nextUrl.pathname;
+      const isLoggedIn = Boolean(session?.user);
 
-      if (pathname.startsWith("/dashboard")) {
-        return Boolean(session?.user);
+      if (pathname === "/login") {
+        return isLoggedIn
+          ? Response.redirect(new URL("/dashboard", request.nextUrl))
+          : true;
       }
 
-      if (pathname === "/login" && session?.user) {
-        return Response.redirect(
-          new URL("/dashboard", request.nextUrl)
-        );
-      }
-
-      return true;
+      return isLoggedIn;
     },
   },
 });
