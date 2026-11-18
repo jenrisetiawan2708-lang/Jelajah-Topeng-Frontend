@@ -33,7 +33,7 @@ export default function Sidebar({
         }`}
       >
         {/* BRAND */}
-        <div className="flex h-[100px] items-center justify-between border-b border-slate-100 px-6">
+        <div className="flex h-[64px] items-center justify-between border-b border-slate-200 px-6 lg:h-[78px]">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

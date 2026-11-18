@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LockKeyhole, LogOut, ShieldCheck, User } from "lucide-react";
 import ConfirmLogout from "@/components/ConfirmLogout";
+import PageHeader from "@/components/ui/PageHeader";
 
 type AdminProfile = {
   firstName: string;
@@ -79,38 +80,32 @@ export default function ProfileView({
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Administrasi Sistem
-          </p>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Profil Admin & Pengaturan Akun
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Profil tampilan disimpan di browser ini. Peran akun berasal dari sesi server.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              setProfile(readProfile());
-              setMessage("");
-            }}
-            className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600"
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            onClick={saveProfile}
-            className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
-          >
-            Simpan Perubahan
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Administrasi Sistem"
+        title="Profil Admin & Pengaturan Akun"
+        description="Profil tampilan disimpan di browser ini. Peran akun berasal dari sesi server."
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setProfile(readProfile());
+                setMessage("");
+              }}
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={saveProfile}
+              className="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
+            >
+              Simpan Perubahan
+            </button>
+          </>
+        }
+      />
 
       {message && (
         <div

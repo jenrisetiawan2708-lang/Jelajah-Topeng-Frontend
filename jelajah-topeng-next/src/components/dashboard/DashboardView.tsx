@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, Ticket, Users, WalletCards } from "lucide-react";
 import AdminActionButton from "@/components/AdminActionButton";
 import StatCard from "@/components/ui/StatCard";
+import PageHeader from "@/components/ui/PageHeader";
 import TransactionRow from "@/components/dashboard/TransactionRow";
 import Masterclass from "@/components/dashboard/Masterclass";
 import FavoriteCard from "@/components/dashboard/FavoriteCard";
@@ -27,52 +28,49 @@ export default function DashboardView({ summary }: { summary: DashboardSummary }
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="mb-2 text-sm font-medium text-emerald-700">Dashboard Kuratorial</p>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            Selamat Datang, Admin!
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">{MENU_BY_ID.dashboard.description}</p>
-        </div>
+      <PageHeader
+        eyebrow="Dashboard Kuratorial"
+        title="Selamat Datang, Admin!"
+        description={MENU_BY_ID.dashboard.description}
+        actions={
+          <>
+            <div className="relative">
+              <button
+                type="button"
+                aria-expanded={showPeriods}
+                onClick={() => setShowPeriods((v) => !v)}
+                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50 sm:px-4 sm:py-3 sm:text-sm"
+              >
+                {period}
+              </button>
+              {showPeriods && (
+                <div className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                  {["7 Hari Terakhir", "30 Hari Terakhir", "90 Hari Terakhir"].map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => {
+                        setPeriod(option);
+                        setShowPeriods(false);
+                      }}
+                      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <div className="relative">
             <button
-              type="button"
-              aria-expanded={showPeriods}
-              onClick={() => setShowPeriods((v) => !v)}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm hover:bg-slate-50 sm:px-4 sm:py-3 sm:text-sm"
+              onClick={() => go("booking")}
+              className="flex items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800 sm:px-4 sm:py-3 sm:text-sm"
             >
-              {period}
+              + Buat Reservasi Baru
             </button>
-            {showPeriods && (
-              <div className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                {["7 Hari Terakhir", "30 Hari Terakhir", "90 Hari Terakhir"].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => {
-                      setPeriod(option);
-                      setShowPeriods(false);
-                    }}
-                    className="block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => go("booking")}
-            className="flex items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-800 sm:px-4 sm:py-3 sm:text-sm"
-          >
-            + Buat Reservasi Baru
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

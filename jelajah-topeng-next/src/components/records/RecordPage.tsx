@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronRight, ExternalLink, Eye, Grid2X2, Pencil, Search, ShieldCheck, TrendingUp } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import StatCard from "@/components/ui/StatCard";
+import PageHeader from "@/components/ui/PageHeader";
 import RecordForm from "@/components/records/RecordForm";
 import RecordDetail from "@/components/records/RecordDetail";
 import { MENU_BY_ID } from "@/lib/menu";
@@ -95,25 +96,19 @@ export default function RecordPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="mb-3 flex items-center gap-2">
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Konsol Kuratorial
-            </span>
-            <span className="text-xs text-slate-400">• Diperbarui hari ini</span>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{title}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{description}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setMode({ type: "add" })}
-          className="flex w-fit items-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 sm:px-5 sm:py-3 sm:text-sm"
-        >
-          + Tambah Data Baru
-        </button>
-      </div>
+      <PageHeader
+        title={title}
+        description={description}
+        actions={
+          <button
+            type="button"
+            onClick={() => setMode({ type: "add" })}
+            className="flex w-fit items-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 sm:px-5 sm:py-3 sm:text-sm"
+          >
+            + Tambah Data Baru
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -210,7 +205,6 @@ export default function RecordPage({
                 >
                   {item.status}
                 </span>
-                {/* Baru: tautan ke halaman detail dinamis /[id] */}
                 <Link
                   href={`${MENU_BY_ID[kind].href}/${item.id}`}
                   aria-label={`Buka halaman ${item.name}`}
