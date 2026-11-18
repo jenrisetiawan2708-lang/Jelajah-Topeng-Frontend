@@ -18,7 +18,6 @@ async function fetchSummaryCached(userId: string) {
   "use cache";
   cacheLife({ stale: 30, revalidate: 60, expire: 300 });
   cacheTag(`summary-${userId}`);
-  console.log("[cache MISS] ringkasan dashboard dihitung ulang");
   return apiFetch<Summary>("/dashboard", userId);
 }
 

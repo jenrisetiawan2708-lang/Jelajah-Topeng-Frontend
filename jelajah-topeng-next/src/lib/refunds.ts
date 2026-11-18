@@ -1,6 +1,10 @@
 import "server-only";
+import { updateTag } from "next/cache";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { RefundDTO } from "@/lib/refund-schema";
+
+// Tag harus sama persis dengan yang dipakai di src/lib/page-data.ts.
+const summaryTag = (userId: string) => `summary-${userId}`;
 
 // Data refund diambil dari BE Express/MySQL (GET /api/refunds).
 // Data contoh diisi otomatis oleh BE sekali per user.
@@ -27,6 +31,7 @@ export async function decideRefundRecord(
         body: JSON.stringify({ decision, reason, note }),
       },
     );
+    updateTag(summaryTag(userId)); // jumlah refund di dashboard ikut berubah
     return true;
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 409)) {
