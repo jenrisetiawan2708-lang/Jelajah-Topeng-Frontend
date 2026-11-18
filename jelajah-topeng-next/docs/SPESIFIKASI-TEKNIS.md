@@ -294,7 +294,7 @@ Alur: Server Component / Server Action → fungsi di `src/lib/*.ts` → `apiFetc
 | Pembayaran | `src/lib/payments.ts` | `/api/payments`, `/payments/checkout`, `/payments/:orderId/status` |
 | Refund | `src/lib/refunds.ts` | `GET /api/refunds`, `PATCH /api/refunds/:id/decision` |
 
-BE memakai driver `mysql2/promise` dengan query SQL terparameter (tanpa ORM); koneksi dikelola di `src/config/db.ts` (lihat B-11).
+BE memakai driver `mysql2/promise` dengan query SQL terparameter Modul pembayaran di BE memakai Drizzle ORM (src/db/schema.ts, src/db/orm.ts, src/models/payment.model.ts) di atas satu connection pool mysql2 yang dipakai bersama (src/config/db.ts).; koneksi dikelola di `src/config/db.ts` (lihat B-11).
 
 **Modular routing (aspek 11)**
 - Route Handler web tipis: `src/app/api/health/route.ts` hanya memanggil `getHealth()` di `src/lib/services/health.service.ts`, lalu membungkus hasilnya dengan `ok()`/`fail()`.
