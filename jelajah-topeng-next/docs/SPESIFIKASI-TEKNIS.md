@@ -27,7 +27,7 @@ dan profil pengguna.
 - Rute admin dilindungi `src/proxy.ts` yang memakai callback `authorized` di `auth.ts`: belum login → redirect ke `/login`; sudah login dan membuka `/login` → dialihkan ke `/dashboard`.
 - Setiap halaman/aksi memanggil `verifySession()` / `requireAdmin()` di Data Access Layer (`src/lib/dal.ts`); UI tidak dipercaya.
 - Server Action `saveRecord` dan `deleteRecord` memeriksa ulang `user.role === "admin"` (status 403 logis: `FORBIDDEN`).
-- Setiap query ke BE membawa `userId` pemilik sesi, dan BE memfilter berdasarkan `userId` tersebut.
+- Setiap panggilan ke BE membawa token berisi `userId` dan `role`. BE memfilter data konten dan refund berdasarkan `user_id`. Pengecualian: daftar transaksi pembayaran (`GET /api/payments`) menampilkan transaksi semua pengunjung dan hanya dapat diakses admin (`requireAdmin`).
 - Web menandatangani token JWT HS256 berumur 5 menit untuk tiap panggilan ke BE (`src/lib/api.ts`); BE memverifikasi dengan secret yang sama.
 
 ### 3. Ekspektasi Sistem
@@ -294,7 +294,7 @@ Alur: Server Component / Server Action → fungsi di `src/lib/*.ts` → `apiFetc
 | Pembayaran | `src/lib/payments.ts` | `/api/payments`, `/payments/checkout`, `/payments/:orderId/status` |
 | Refund | `src/lib/refunds.ts` | `GET /api/refunds`, `PATCH /api/refunds/:id/decision` |
 
-> TODO: tulis ORM/driver yang dipakai BE dan lokasi koneksinya (lihat B-11).
+BE memakai driver `mysql2/promise` dengan query SQL terparameter (tanpa ORM); koneksi dikelola di `src/config/db.ts` (lihat B-11).
 
 **Modular routing (aspek 11)**
 - Route Handler web tipis: `src/app/api/health/route.ts` hanya memanggil `getHealth()` di `src/lib/services/health.service.ts`, lalu membungkus hasilnya dengan `ok()`/`fail()`.
@@ -312,7 +312,7 @@ Backend Express dipisah per lapisan dan per modul (auth, dashboard, payment, rec
 | `src/middleware/` | `verifyToken`, `requireJson`, `requestContext`, `responseEnvelope`, `errorHandler` |
 | `src/config/`, `src/utils/`, `src/types/` | `db.ts`, `env.ts`; `AppError`, `asyncHandler`; `express.d.ts` |
 
-> TODO: cek isi `routes/index.ts` untuk prefix rute (`/api/...`).
+`src/routes/index.ts` menggabungkan semua modul di bawah prefix `/api`: `/api/health`, `/api/auth`, `/api/records`, `/api/refunds`, `/api/payments`, `/api/dashboard`. Contoh `record.route.ts`: `router.use(verifyToken, requireAdmin)`, lalu `router.route("/").get(list).post(validateRecord, create)` dan `router.route("/:id").put(...).delete(...)`.
 
 **Standarisasi response (aspek 13)**
 
@@ -322,6 +322,11 @@ Backend Express dipisah per lapisan dan per modul (auth, dashboard, payment, rec
 - Contoh: `/api/health` mengembalikan `ok(getHealth())`, atau `fail("INTERNAL_ERROR", "...", 500)` jika gagal.
 - `apiFetch` membaca isi `data` dari respons BE (`body.data`), dan melempar `ApiError(status, message, fields)` jika respons tidak OK.
 - Server Action memakai tipe hasil sendiri: `FormState` (`ok`, `message`, `errors`, `ts`) dan `PaymentResult` (`ok` + `data` atau `error`).
+
+Di BE, middleware `responseEnvelope` (`src/middleware/responseEnvelope.ts`) menambahkan `res.success()` dan `res.fail()` ke setiap response sehingga format seragam:
+- Sukses: `{ success: true, message, data, requestId }`.
+- Gagal: `{ success: false, message, errors?, requestId }` dengan status HTTP yang sesuai.
+- `requestId` berasal dari middleware `requestContext` (`req.id`, juga dikirim lewat header `X-Request-Id`).
 
 ---
 
@@ -334,6 +339,22 @@ Next.js 16 mengganti nama `middleware.ts` menjadi `proxy.ts`; fungsinya sama. Be
   - belum login membuka rute terproteksi → dialihkan ke `/login` (`pages.signIn`);
   - sudah login membuka `/login` → dialihkan ke `/dashboard`.
 - Pemeriksaan peran admin tetap dilakukan di DAL dan Server Action (lihat B-12).
+
+**Middleware di BE (Express)**, dipasang berurutan di `src/app.ts` (urutan menentukan hasil):
+
+| Urutan | Middleware | Fungsi |
+|---|---|---|
+| 1 | `helmet()` | Header keamanan |
+| 2 | `cors()` | Hanya origin dari `CORS_ORIGIN` |
+| 3 | `requestContext` | Membuat `req.id` |
+| 4 | `morgan` | Logging request |
+| 5 | `responseEnvelope` | `res.success` / `res.fail` |
+| 6 | `requireJson` | Memeriksa Content-Type |
+| 7 | `express.json({ limit: "2mb" })` | Membaca `req.body` |
+| Per rute | `verifyToken`, `requireAdmin` | Verifikasi JWT HS256 dan peran admin |
+| Akhir | `notFound`, `errorHandler` | 404 dan penanganan error global |
+
+`verifyToken` (`src/middleware/verifyToken.ts`) mengambil token dari header `Authorization: Bearer`, memverifikasinya dengan `JWT_SECRET`, lalu menolak dengan 401 (token tidak ada atau kedaluwarsa) atau 403 (token tidak valid). `requireAdmin` menolak dengan 403 jika peran bukan admin.
 
 ---
 
@@ -350,11 +371,25 @@ Alur atribut kustom di `auth.ts`:
 3. Callback `session` menyalin `token.sub` ke `session.user.id` dan `token.role` ke `session.user.role`.
 4. `verifySession()` di `src/lib/dal.ts` mengembalikan `{ id, email, role }` yang dipakai semua halaman dan Server Action. Di `proxy.ts`, sesi tersedia sebagai `req.auth`.
 
+**Di BE (Express)**, `src/types/express.d.ts` memperluas modul `express-serve-static-core`:
+- `Request.id: string`, diisi oleh `requestContext`.
+- `Response.success(data, message?, status?)` dan `Response.fail(message, status?, errors?)`, diisi oleh `responseEnvelope`.
+- User terverifikasi dari JWT (`{ id, email, role }`, tipe `AuthUser`) disimpan `verifyToken` di `res.locals.user`, dibaca lewat helper bertipe `currentUser(res)`.
+
 ---
 
 ## B-11. Konektivitas Database (aspek 15)
 
-> TODO: tulis pool/singleton koneksi dari `src/config/db.ts` di BE (cek isi file dulu). Sisi web tidak mengakses database langsung; sisa Prisma (`src/lib/db.ts`, folder `prisma/`) dihapus setelah dipastikan tidak ada yang meng-import.
+Sisi web tidak mengakses database langsung; semua data lewat BE. Koneksi database dikelola di BE, `src/config/db.ts`:
+
+- **Connection pool tunggal (singleton):** `mysql.createPool(...)` dibuat sekali sebagai `export const pool` dan diimpor oleh semua model (`record.model.ts`, dst.), sehingga koneksi dipinjam dan dikembalikan, bukan dibuka tiap request.
+- **Pengaturan pool:** `waitForConnections: true`, `queueLimit: 0`, `enableKeepAlive: true`, `connectionLimit` 3 di produksi (tiap instance serverless Vercel cukup pool kecil) dan 10 di pengembangan.
+- **Keamanan koneksi:** SSL TLS 1.2 dengan `rejectUnauthorized: true` untuk TiDB Cloud; kredensial dari environment variable (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL`).
+- **Transaksi:** `withTransaction(work)` melakukan `BEGIN`, `COMMIT` jika berhasil, `ROLLBACK` jika gagal, dan selalu `release()` koneksi (dipakai saat seed data contoh).
+- **Cek kesehatan:** `checkDb()` melakukan `ping`, dipanggil oleh `GET /api/health`.
+- Driver yang dipakai `mysql2/promise` dengan query terparameter (`?`), bukan ORM.
+
+Sisa Prisma di sisi web (SQLite, tidak terpakai) sudah dihapus.
 
 ---
 
@@ -372,7 +407,23 @@ Alur atribut kustom di `auth.ts`:
 - Server Action memeriksa ulang `user.role !== "admin"` sebelum mutasi (`saveRecord`, `deleteRecord`, `decideRefund`, `fetchPayments`, `refreshPaymentStatus`, `removePayment`, `uploadImage`).
 - Kepemilikan data: `updateRecord`/`removeRecord` dibatasi `userId`; hasil `false` berarti data tidak ditemukan atau bukan milik akun ini.
 
-> TODO: konfirmasi di BE bagaimana filter `userId`/`role` diterapkan, khususnya untuk daftar transaksi (admin melihat transaksi semua pengunjung).
+**Lapisan akses data di BE** (`src/models/*.model.ts`), contoh `record.model.ts`:
+- Semua query data milik pengguna memakai `WHERE user_id = ?` dari `userId` token, termasuk `listByUser`, `listGrouped`, `nameExists`, `findOwned`, `update`, dan `remove`. Komentar kode menyebut ini untuk mencegah IDOR.
+- `update` dan `remove` memakai `WHERE id = ? AND user_id = ?`; hasil `null`/`false` berarti data tidak ditemukan atau bukan milik akun itu.
+- Transformasi `toDTO` mengubah `snake_case` menjadi `camelCase` dan tidak mengirim `user_id` ke luar.
+- Lapisan rute: `router.use(verifyToken, requireAdmin)` pada `record.route.ts`, jadi semua rute data wajib login dan admin.
+
+**Pembayaran** (`payment.model.ts`, `payment.route.ts`): hak akses dibedakan per peran.
+
+| Endpoint | Akses | Query |
+|---|---|---|
+| `GET /api/payments` | Admin (`requireAdmin`) | `listAll()`: semua transaksi semua pengunjung |
+| `GET /api/payments/mine` | Pengunjung login | `listByUser(userId)`: `WHERE user_id = ?` |
+| `POST /api/payments/checkout`, `GET /api/payments/:orderId/status` | Login (mobile atau admin) | Hanya setelah `verifyToken` |
+| `DELETE /api/payments/:orderId` | Admin | `removeAny()`; transaksi `paid`/`refunded` dikunci (HTTP 409) karena dipakai untuk angka pendapatan |
+| `POST /api/payments/notification` | Publik (webhook Midtrans) | Diamankan lewat `signature_key`; dideklarasikan sebelum `router.use(verifyToken)` |
+
+**Refund** (`refund.model.ts`): `list` dan `findOwned` memakai `WHERE ... user_id = ?`. Keputusan setuju/tolak (`decide`) berjalan dalam satu transaksi database: `SELECT ... FOR UPDATE` mengunci baris agar dua admin tidak memutuskan bersamaan, status diubah hanya dari keadaan yang valid (`Menunggu`/`Diproses`), lalu perubahan dan catatan di `refund_logs` di-`COMMIT` bersamaan atau di-`ROLLBACK` jika salah satu gagal.
 
 ---
 
@@ -419,6 +470,20 @@ Berkas tidak valid ditolak dengan pesan error, dan tidak pernah dikirim ke Verce
 - `src/app/not-found.tsx`: rute tidak ada (404).
 - Detail error dicatat di log server (`console.error`), tidak ditampilkan ke pengguna.
 
+**Di BE**, penanganan error dipusatkan di `src/middleware/errorHandler.ts` (`res.fail` dengan status HTTP yang tepat):
+
+| Kondisi | Status | Penanganan |
+|---|---|---|
+| Rute tidak ada | 404 | `notFound` |
+| Error terduga (`AppError`) | `err.status` | Pesan dan `errors` dari `AppError` diteruskan |
+| JSON rusak | 400 | "Format JSON tidak valid" |
+| Body terlalu besar | 413 | "Ukuran data terlalu besar" |
+| Token tidak ada / kedaluwarsa | 401 | `verifyToken` |
+| Token tidak valid / bukan admin | 403 | `verifyToken`, `requireAdmin` |
+| Error tak terduga | 500 | Dicatat dengan `requestId`, pesan generik ke klien |
+
+`errorHandler` dipasang paling akhir di `app.ts`. Rute asinkron dibungkus `asyncHandler` agar error masuk ke handler global.
+
 ---
 
 ## B-16. Deployment (aspek 22)
@@ -443,4 +508,8 @@ BE memiliki `api/index.js` dan `vercel.json` sebagai titik masuk deploy di Verce
 - `○ Static`: `/` dan `/login`.
 - `ƒ Dynamic`: `/api/auth/[...nextauth]` dan `/api/health`.
 
-> TODO: URL FE yang online dan URL BE yang online.
+**Aplikasi online (Vercel, branch `main`, environment Production):**
+- Frontend (admin web): https://jelajah-topeng-frontend.vercel.app/
+- Backend (API): https://jelajah-topeng-backend.vercel.app/ (cek kesehatan: `/api/health`)
+
+Deploy otomatis berjalan tiap pull request digabung ke `main` (contoh: merge pull request #8, status Ready). Membuka alamat frontend tanpa sesi dialihkan ke `/login?callbackUrl=.../dashboard`, sesuai proteksi `src/proxy.ts`.
