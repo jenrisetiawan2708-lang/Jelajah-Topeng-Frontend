@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
@@ -16,6 +16,15 @@ export default function AdminFrame({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Jumlah data di halaman Notifikasi, dihitung dari indeks yang dibuat server.
+  // Kuncinya berformat "data-notification-<id>" (lihat buildSearchIndex).
+  const notificationCount = useMemo(
+    () =>
+      searchIndex.filter((entry) => entry.key.startsWith("data-notification-"))
+        .length,
+    [searchIndex],
+  );
+
   return (
     <div className="min-h-screen bg-[#f7f9fc] text-slate-900">
       <DateLimiter />
@@ -25,6 +34,7 @@ export default function AdminFrame({
         <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[255px]">
           <Topbar
             searchIndex={searchIndex}
+            notificationCount={notificationCount}
             onOpenSidebar={() => setSidebarOpen(true)}
           />
           <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">

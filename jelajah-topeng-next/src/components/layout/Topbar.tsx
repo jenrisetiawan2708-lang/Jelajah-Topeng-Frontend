@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, ChevronRight, LogOut, Menu, Search, Settings, X } from "lucide-react";
 import ConfirmLogout from "@/components/ConfirmLogout";
 import { MENU_BY_ID, MENU_GROUPS } from "@/lib/menu";
@@ -15,6 +15,9 @@ type Result = {
   subtitle: string;
   href: string;
 };
+
+// Seberapa sering jumlah notifikasi dicek ulang ke server (milidetik).
+const NOTIFICATION_POLL_MS = 30_000;
 
 function findResults(rawQuery: string, index: SearchEntry[]): Result[] {
   const q = rawQuery.trim().toLowerCase();
@@ -78,9 +81,11 @@ function ResultRow({
 
 export default function Topbar({
   searchIndex,
+  notificationCount = 0,
   onOpenSidebar,
 }: {
   searchIndex: SearchEntry[];
+  notificationCount?: number;
   onOpenSidebar: () => void;
 }) {
   const router = useRouter();
@@ -91,6 +96,23 @@ export default function Topbar({
   const menuResults = results.filter((r) => r.type === "menu");
   const dataResults = results.filter((r) => r.type === "data");
   const showDropdown = open && query.trim().length >= 2;
+
+  const hasNotification = notificationCount > 0;
+  const badgeText = notificationCount > 9 ? "9+" : String(notificationCount);
+
+  // Cek ulang jumlah notifikasi secara berkala dan saat tab kembali dibuka,
+  // supaya badge ikut berubah tanpa perlu refresh manual.
+  useEffect(() => {
+    function refreshIfVisible() {
+      if (document.visibilityState === "visible") router.refresh();
+    }
+    const timer = window.setInterval(refreshIfVisible, NOTIFICATION_POLL_MS);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
+  }, [router]);
 
   function select(result: Result) {
     setOpen(false);
@@ -185,7 +207,7 @@ export default function Topbar({
                 </>
               ) : (
                 <p className="px-3 py-4 text-sm text-slate-500">
-                  Tidak ada hasil untuk “{query.trim()}”.
+                  Tidak ada hasil untuk &ldquo;{query.trim()}&rdquo;.
                 </p>
               )}
             </div>
@@ -199,11 +221,20 @@ export default function Topbar({
 
         <Link
           href={MENU_BY_ID.notification.href}
-          title="Notifikasi"
+          title={hasNotification ? `Notifikasi (${notificationCount})` : "Notifikasi"}
+          aria-label={
+            hasNotification
+              ? `Notifikasi, ${notificationCount} data`
+              : "Notifikasi, tidak ada data"
+          }
           className="relative hidden h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-50 hover:text-emerald-700 lg:flex"
         >
           <Bell size={20} />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+          {hasNotification && (
+            <span className="absolute right-0 top-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+              {badgeText}
+            </span>
+          )}
         </Link>
 
         <Link
