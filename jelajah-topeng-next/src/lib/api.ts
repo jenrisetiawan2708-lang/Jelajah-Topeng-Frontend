@@ -4,6 +4,10 @@ import { SignJWT } from "jose";
 const API_URL = process.env.API_URL ?? "http://localhost:5050/api";
 const secret = new TextEncoder().encode(process.env.JWT_SECRET ?? "");
 
+// Semua admin web memakai SATU pemilik data (sama dengan yang dibaca mobile).
+// Kalau CONTENT_OWNER_ID tidak diisi, pakai id sesi seperti sebelumnya.
+const OWNER_ID = process.env.CONTENT_OWNER_ID?.trim();
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -19,7 +23,7 @@ export class ApiError extends Error {
 async function makeToken(userId: string) {
   return new SignJWT({ role: "admin" })
     .setProtectedHeader({ alg: "HS256" })
-    .setSubject(userId)
+    .setSubject(OWNER_ID || userId)
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(secret);
