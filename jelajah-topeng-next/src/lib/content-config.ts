@@ -15,6 +15,10 @@ export const KINDS = [
 
 export type RecordKind = (typeof KINDS)[number];
 
+// Pilihan penerima notifikasi: semua user, atau satu pengguna terdaftar (email).
+export const ALL_USERS = "Semua user";
+export type RecipientOption = { name: string; email: string };
+
 export type RecordDTO = {
   id: string;
   name: string;
@@ -232,7 +236,7 @@ export const CONTENT_PROFILES: Record<RecordKind, ContentProfile> = {
 
   payment: {
     fields: ["Kode transaksi", "Rincian", "Lokasi", "Tanggal", "Jumlah"],
-    statuses: ["Belum ada data"],
+    statuses: ["Terdaftar"],
     records: [],
   },
 

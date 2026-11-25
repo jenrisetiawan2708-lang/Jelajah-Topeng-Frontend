@@ -8,6 +8,7 @@ import { getAllRecords } from "@/lib/page-data";
 import { MENU_BY_ID } from "@/lib/menu";
 import type { RecordKind } from "@/lib/content-config";
 import { getRecordLayout } from "@/lib/record-layout";
+import MarkNotificationRead from "@/components/records/MarkNotificationRead";
 import PageSkeleton from "@/components/ui/PageSkeleton";
 
 type Props = {
@@ -35,6 +36,7 @@ async function DetailContent({ kind, params }: Props) {
 
   return (
     <div className="max-w-2xl">
+      {kind === "notification" && <MarkNotificationRead id={item.id} />}
       <Link
         href={menu.href}
         className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-emerald-700"

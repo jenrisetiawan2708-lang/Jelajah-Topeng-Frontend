@@ -18,6 +18,14 @@ async function RecordContent({ kind, searchParams }: Props) {
   const records = await getAllRecords(user.id);
   const menu = MENU_BY_ID[kind];
 
+  // Daftar pengguna terdaftar (dari aplikasi mobile) untuk dropdown Penerima.
+  const recipients =
+    kind === "notification"
+      ? records.users
+          .filter((u) => u.location)
+          .map((u) => ({ name: u.name, email: u.location }))
+      : [];
+
   return (
     <RecordPage
       key={q ?? ""}
@@ -25,6 +33,7 @@ async function RecordContent({ kind, searchParams }: Props) {
       title={menu.title}
       description={menu.description}
       records={records[kind]}
+      recipients={recipients}
       initialQuery={q ?? ""}
     />
   );

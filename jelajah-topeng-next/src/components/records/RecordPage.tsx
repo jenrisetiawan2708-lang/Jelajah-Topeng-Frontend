@@ -10,7 +10,13 @@ import RecordForm from "@/components/records/RecordForm";
 import RecordDetail from "@/components/records/RecordDetail";
 import { MENU_BY_ID } from "@/lib/menu";
 import { MENU_ICONS } from "@/components/layout/menu-icons";
-import { CONTENT_PROFILES, type RecordDTO, type RecordKind } from "@/lib/content-config";
+import {
+  CONTENT_PROFILES,
+  type RecipientOption,
+  type RecordDTO,
+  type RecordKind,
+} from "@/lib/content-config";
+import { markRead, useReadIds } from "@/lib/notification-read";
 
 type Mode =
   | { type: "none" }
@@ -18,7 +24,7 @@ type Mode =
   | { type: "view"; item: RecordDTO }
   | { type: "edit"; item: RecordDTO };
 
-const GREEN = ["Aktif", "Selesai", "Dikonfirmasi", "Terverifikasi", "Tersedia", "Terbit", "Terkirim"];
+const GREEN = ["Aktif", "Selesai", "Dikonfirmasi", "Terverifikasi", "Tersedia", "Terbit", "Terkirim", "Terdaftar"];
 const AMBER = [
   "Menunggu Review",
   "Menunggu konfirmasi",
@@ -36,12 +42,14 @@ export default function RecordPage({
   description,
   records,
   initialQuery = "",
+  recipients = [],
 }: {
   kind: RecordKind;
   title: string;
   description: string;
   records: RecordDTO[];
   initialQuery?: string;
+  recipients?: RecipientOption[];
 }) {
   const profile = CONTENT_PROFILES[kind];
   const Icon = MENU_ICONS[kind];
@@ -52,6 +60,14 @@ export default function RecordPage({
   const [mode, setMode] = useState<Mode>({ type: "none" });
 
   const closeModal = () => setMode({ type: "none" });
+
+  // Profil Pengguna hanya menampilkan akun yang mendaftar lewat aplikasi mobile.
+  const readOnly = kind === "users";
+  const isNotification = kind === "notification";
+  const readIds = useReadIds();
+  const unreadIds = isNotification
+    ? records.filter((r) => !readIds.has(r.id)).map((r) => r.id)
+    : [];
 
   const firstStatus = profile.statuses[0];
   const secondStatus = profile.statuses[1] ?? profile.statuses[0];
@@ -100,13 +116,27 @@ export default function RecordPage({
         title={title}
         description={description}
         actions={
-          <button
-            type="button"
-            onClick={() => setMode({ type: "add" })}
-            className="flex w-fit items-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 sm:px-5 sm:py-3 sm:text-sm"
-          >
-            + Tambah Data Baru
-          </button>
+          readOnly ? undefined : (
+            <>
+              {isNotification && (
+                <button
+                  type="button"
+                  disabled={unreadIds.length === 0}
+                  onClick={() => markRead(unreadIds)}
+                  className="flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 sm:px-5 sm:py-3 sm:text-sm"
+                >
+                  Tandai semua dibaca
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setMode({ type: "add" })}
+                className="flex w-fit items-center gap-2 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800 sm:px-5 sm:py-3 sm:text-sm"
+              >
+                + Tambah Data Baru
+              </button>
+            </>
+          )
         }
       />
 
@@ -188,7 +218,14 @@ export default function RecordPage({
                   {String((currentPage - 1) * PAGE_SIZE + index + 1).padStart(2, "0")}
                 </div>
                 <div className="min-w-0 flex-1 basis-[160px]">
-                  <h3 className="break-words text-sm font-semibold text-slate-800">{item.name}</h3>
+                  <h3 className="break-words text-sm font-semibold text-slate-800">
+                    {item.name}
+                    {isNotification && !readIds.has(item.id) && (
+                      <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
+                        Baru
+                      </span>
+                    )}
+                  </h3>
                   <p className="mt-1 break-words text-xs text-slate-400">
                     {[item.location, item.description].filter(Boolean).join(" · ") ||
                       "Data kuratorial Jelajah Topeng"}
@@ -207,6 +244,7 @@ export default function RecordPage({
                 </span>
                 <Link
                   href={`${MENU_BY_ID[kind].href}/${item.id}`}
+                  onClick={() => isNotification && markRead([item.id])}
                   aria-label={`Buka halaman ${item.name}`}
                   className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
                 >
@@ -215,19 +253,24 @@ export default function RecordPage({
                 <button
                   type="button"
                   aria-label={`Lihat ${item.name}`}
-                  onClick={() => setMode({ type: "view", item })}
+                  onClick={() => {
+                    if (isNotification) markRead([item.id]);
+                    setMode({ type: "view", item });
+                  }}
                   className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
                 >
                   <Eye size={16} />
                 </button>
-                <button
-                  type="button"
-                  aria-label={`Edit ${item.name}`}
-                  onClick={() => setMode({ type: "edit", item })}
-                  className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
-                >
-                  <Pencil size={15} />
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    aria-label={`Edit ${item.name}`}
+                    onClick={() => setMode({ type: "edit", item })}
+                    className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                )}
               </div>
             ))
           ) : (
@@ -291,6 +334,7 @@ export default function RecordPage({
               kind={kind}
               item={mode.item}
               onClose={closeModal}
+              readOnly={readOnly}
               onEdit={() => setMode({ type: "edit", item: mode.item })}
             />
           ) : (
@@ -298,6 +342,7 @@ export default function RecordPage({
               key={mode.type === "edit" ? mode.item.id : "new"}
               kind={kind}
               item={mode.type === "edit" ? mode.item : null}
+              recipients={recipients}
               onClose={closeModal}
               onSaved={() => {
                 closeModal();

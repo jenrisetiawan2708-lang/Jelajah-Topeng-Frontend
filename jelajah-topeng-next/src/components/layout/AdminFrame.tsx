@@ -5,6 +5,7 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import DateLimiter from "@/components/DateLimiter";
+import { useReadIds } from "@/lib/notification-read";
 import type { SearchEntry } from "@/lib/search";
 
 export default function AdminFrame({
@@ -16,13 +17,17 @@ export default function AdminFrame({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Jumlah data di halaman Notifikasi, dihitung dari indeks yang dibuat server.
+  // Notifikasi yang belum dibaca, dihitung dari indeks yang dibuat server.
   // Kuncinya berformat "data-notification-<id>" (lihat buildSearchIndex).
+  const readIds = useReadIds();
   const notificationCount = useMemo(
     () =>
-      searchIndex.filter((entry) => entry.key.startsWith("data-notification-"))
-        .length,
-    [searchIndex],
+      searchIndex.filter(
+        (entry) =>
+          entry.key.startsWith("data-notification-") &&
+          !readIds.has(entry.key.slice("data-notification-".length)),
+      ).length,
+    [searchIndex, readIds],
   );
 
   return (
