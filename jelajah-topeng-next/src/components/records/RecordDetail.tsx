@@ -11,11 +11,13 @@ export default function RecordDetail({
   item,
   onClose,
   onEdit,
+  readOnly = false,
 }: {
   kind: RecordKind;
   item: RecordDTO;
   onClose: () => void;
   onEdit: () => void;
+  readOnly?: boolean;
 }) {
   const { profile, dateLabel, extraDate } = getRecordLayout(kind);
 
@@ -89,7 +91,7 @@ export default function RecordDetail({
       )}
 
       <div className="mt-6 flex justify-between">
-        <DeleteRecordButton kind={kind} id={item.id} onDone={onClose} />
+        {readOnly ? <span /> : <DeleteRecordButton kind={kind} id={item.id} onDone={onClose} />}
         <div className="flex gap-2">
           <button
             type="button"
@@ -98,6 +100,7 @@ export default function RecordDetail({
           >
             Tutup
           </button>
+          {!readOnly && (
           <button
             type="button"
             onClick={onEdit}
@@ -105,6 +108,7 @@ export default function RecordDetail({
           >
             <Pencil size={14} /> Edit
           </button>
+          )}
         </div>
       </div>
     </>

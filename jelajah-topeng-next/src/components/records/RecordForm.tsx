@@ -8,7 +8,9 @@ import { saveRecord } from "@/app/actions/records";
 import ImageUploadField from "@/components/ImageUploadField";
 import { useToast } from "@/components/ToastProvider";
 import {
+  ALL_USERS,
   WILAYAH_SUGGESTIONS,
+  type RecipientOption,
   type FormState,
   type RecordDTO,
   type RecordKind,
@@ -40,11 +42,13 @@ export default function RecordForm({
   item,
   onClose,
   onSaved,
+  recipients = [],
 }: {
   kind: RecordKind;
   item: RecordDTO | null; // null = tambah data baru
   onClose: () => void;
   onSaved: () => void;
+  recipients?: RecipientOption[];
 }) {
   const toast = useToast();
   const { profile, yearAsDate, dateLabel, extraDate, isDateInput } =
@@ -70,7 +74,12 @@ export default function RecordForm({
       id: editing ? item.id : "",
       name: item?.name ?? "",
       description: item?.description ?? "",
-      location: item?.location ?? "",
+      location:
+        kind === "notification"
+          ? item && (item.location === ALL_USERS || recipients.some((r) => r.email === item.location))
+            ? item.location
+            : ALL_USERS
+          : (item?.location ?? ""),
       date: item?.date ?? "",
       amount: item?.amount ?? "",
       status: item?.status ?? profile.statuses[0],
@@ -114,7 +123,31 @@ export default function RecordForm({
 
   const busy = pending || isSending;
 
-  const locationField = (
+  const recipientField = (
+    <label className="block text-sm font-medium text-slate-700">
+      {profile.fields[2]}
+      <select
+        aria-invalid={!!fieldError("location")}
+        className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-emerald-600"
+        {...register("location")}
+      >
+        <option value={ALL_USERS}>{ALL_USERS}</option>
+        {recipients.map((r) => (
+          <option key={r.email} value={r.email}>
+            {r.name} — {r.email}
+          </option>
+        ))}
+      </select>
+      {recipients.length === 0 && (
+        <span className="mt-1 block text-xs font-normal text-slate-400">
+          Belum ada pengguna yang mendaftar di aplikasi mobile.
+        </span>
+      )}
+      <FieldError message={fieldError("location")} />
+    </label>
+  );
+
+  const locationField = kind === "notification" ? recipientField : (
     <label className="block text-sm font-medium text-slate-700">
       {profile.fields[2]}
       <input

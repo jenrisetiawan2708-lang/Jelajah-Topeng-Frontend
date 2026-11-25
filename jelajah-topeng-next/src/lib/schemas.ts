@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  ALL_USERS,
   CONTENT_PROFILES,
   KINDS,
   type FieldErrors,
@@ -21,6 +22,7 @@ export type FieldKey =
 type Values = Partial<Record<FieldKey, string>>;
 
 const LETTERS_ONLY = /^[\p{L}\s.,'’-]+$/u;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const BLOB_URL_RE = /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/.+/i;
 const MAX_IMAGE_URL_LENGTH = 500;
@@ -122,7 +124,13 @@ export function checkRecord(
 
   // Halaman non-panji
   const location = get("location");
-  if (location.length > 200) errors.location = `${f[2]} maksimal 200 karakter`;
+  if (kind === "notification") {
+    // Penerima notifikasi: "Semua user" atau email pengguna terdaftar.
+    if (!location) errors.location = `${f[2]} wajib dipilih`;
+    else if (location !== ALL_USERS && !EMAIL_RE.test(location)) {
+      errors.location = `${f[2]} harus "${ALL_USERS}" atau pengguna terdaftar`;
+    }
+  } else if (location.length > 200) errors.location = `${f[2]} maksimal 200 karakter`;
   else {
     const message = validateByLabel(f[2], location);
     if (message) errors.location = message;
