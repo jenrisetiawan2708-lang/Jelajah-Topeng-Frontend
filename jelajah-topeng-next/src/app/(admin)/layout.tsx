@@ -5,6 +5,7 @@ import AdminFrame from "@/components/layout/AdminFrame";
 import { verifySession } from "@/lib/dal";
 import { emptyRecords } from "@/lib/content-config";
 import { getAllRecords, getSummary } from "@/lib/page-data";
+import { getUnreadNotificationIds } from "@/lib/notifications";
 import { buildSearchIndex } from "@/lib/search";
 
 // Cek sesi + ambil data untuk pencarian. Dibungkus Suspense karena memakai data runtime.
@@ -15,13 +16,17 @@ async function AdminShell({ children }: { children: ReactNode }) {
     return <AccessDenied email={user.email} />;
   }
 
-  const [summary, records] = await Promise.all([
+  const [summary, records, unreadNotificationIds] = await Promise.all([
     getSummary(),
     getAllRecords(user.id).catch(() => emptyRecords()),
+    getUnreadNotificationIds(user.id),
   ]);
 
   return (
-    <AdminFrame searchIndex={buildSearchIndex(records, summary)}>
+    <AdminFrame
+      searchIndex={buildSearchIndex(records, summary)}
+      unreadNotificationIds={unreadNotificationIds}
+    >
       {children}
     </AdminFrame>
   );

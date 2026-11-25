@@ -16,7 +16,7 @@ import {
   type RecordDTO,
   type RecordKind,
 } from "@/lib/content-config";
-import { markRead, useReadIds } from "@/lib/notification-read";
+import { useUnreadNotificationIds } from "@/components/layout/UnreadNotifications";
 
 type Mode =
   | { type: "none" }
@@ -64,10 +64,7 @@ export default function RecordPage({
   // Profil Pengguna hanya menampilkan akun yang mendaftar lewat aplikasi mobile.
   const readOnly = kind === "users";
   const isNotification = kind === "notification";
-  const readIds = useReadIds();
-  const unreadIds = isNotification
-    ? records.filter((r) => !readIds.has(r.id)).map((r) => r.id)
-    : [];
+  const unreadIds = useUnreadNotificationIds();
 
   const firstStatus = profile.statuses[0];
   const secondStatus = profile.statuses[1] ?? profile.statuses[0];
@@ -118,16 +115,6 @@ export default function RecordPage({
         actions={
           readOnly ? undefined : (
             <>
-              {isNotification && (
-                <button
-                  type="button"
-                  disabled={unreadIds.length === 0}
-                  onClick={() => markRead(unreadIds)}
-                  className="flex w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40 sm:px-5 sm:py-3 sm:text-sm"
-                >
-                  Tandai semua dibaca
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => setMode({ type: "add" })}
@@ -220,7 +207,7 @@ export default function RecordPage({
                 <div className="min-w-0 flex-1 basis-[160px]">
                   <h3 className="break-words text-sm font-semibold text-slate-800">
                     {item.name}
-                    {isNotification && !readIds.has(item.id) && (
+                    {isNotification && unreadIds.has(item.id) && (
                       <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
                         Baru
                       </span>
@@ -244,7 +231,6 @@ export default function RecordPage({
                 </span>
                 <Link
                   href={`${MENU_BY_ID[kind].href}/${item.id}`}
-                  onClick={() => isNotification && markRead([item.id])}
                   aria-label={`Buka halaman ${item.name}`}
                   className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
                 >
@@ -253,10 +239,7 @@ export default function RecordPage({
                 <button
                   type="button"
                   aria-label={`Lihat ${item.name}`}
-                  onClick={() => {
-                    if (isNotification) markRead([item.id]);
-                    setMode({ type: "view", item });
-                  }}
+                  onClick={() => setMode({ type: "view", item })}
                   className="rounded-lg border border-slate-200 p-2 text-slate-400 hover:text-emerald-700"
                 >
                   <Eye size={16} />
